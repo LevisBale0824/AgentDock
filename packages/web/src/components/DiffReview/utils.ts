@@ -1,4 +1,4 @@
-import type { SessionMessage } from '@/http/index'
+import type { CanonicalMessage, CanonicalPart } from '@/http/index'
 import type { FileDiff } from './index'
 
 export function mergeDiffs(prev: FileDiff[], incoming: FileDiff[]): FileDiff[] {
@@ -21,19 +21,16 @@ export function mergeDiffs(prev: FileDiff[], incoming: FileDiff[]): FileDiff[] {
   return result
 }
 
-export function extractDiffsFromMessages(sdkMsgs: SessionMessage[]): FileDiff[] {
+export function extractDiffsFromMessages(msgs: CanonicalMessage[]): FileDiff[] {
   const diffMap = new Map<string, FileDiff>()
-  for (const m of sdkMsgs) {
-    if (m.type !== 'assistant') continue
-    const blocks: any[] = Array.isArray((m.message as any)?.content)
-      ? (m.message as any).content
-      : []
-    for (const block of blocks) {
-      if (block.type !== 'tool_use') continue
-      const inp = block.input ?? {}
-      if (block.name === 'Write') {
-        const filePath: string = inp.file_path ?? ''
-        const after: string = inp.content ?? ''
+  for (const m of msgs) {
+    if (m.role !== 'assistant') continue
+    for (const part of m.parts) {
+      if (part.type !== 'tool_call') continue
+      const inp = (part.input ?? {}) as Record<string, unknown>
+      if (part.tool === 'Write') {
+        const filePath: string = (inp.file_path as string) ?? ''
+        const after: string = (inp.content as string) ?? ''
         if (!filePath) continue
         const existing = diffMap.get(filePath)
         if (existing) {
@@ -54,10 +51,10 @@ export function extractDiffsFromMessages(sdkMsgs: SessionMessage[]): FileDiff[] 
             deletions: 0,
           })
         }
-      } else if (block.name === 'Edit') {
-        const filePath: string = inp.file_path ?? ''
-        const oldStr: string = inp.old_string ?? ''
-        const newStr: string = inp.new_string ?? ''
+      } else if (part.tool === 'Edit') {
+        const filePath: string = (inp.file_path as string) ?? ''
+        const oldStr: string = (inp.old_string as string) ?? ''
+        const newStr: string = (inp.new_string as string) ?? ''
         if (!filePath) continue
         const existing = diffMap.get(filePath)
         const before = existing ? existing.before || oldStr : oldStr
@@ -86,4 +83,9 @@ export function extractDiffsFromMessages(sdkMsgs: SessionMessage[]): FileDiff[] 
     }
   }
   return Array.from(diffMap.values())
+}
+
+/** 从单条消息的 parts 提取 diff（供流式增量用）*/
+export function extractDiffsFromParts(parts: CanonicalPart[]): FileDiff[] {
+  return extractDiffsFromMessages([{ id: '', role: 'assistant', parts }])
 }

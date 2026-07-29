@@ -13,17 +13,9 @@ import {
   Popover,
 } from 'antd'
 import { ArrowUpOutlined, XFilled } from '@ant-design/icons'
-import type { AskUserQuestion, SsePart } from '@/http/index'
-import type { SessionMessage } from '@/http/index'
+import type { AskUserQuestion } from '@/http/index'
 import type { Attachment } from '@/components/ChatInput/index.tsx'
-
-interface DisplayMessage {
-  id: string
-  role: 'user' | 'assistant'
-  sdkMessages: SessionMessage[]
-  error?: string
-  cost?: number
-}
+import type { DisplayMessage } from '@/components/MessageBubble/index.tsx'
 import ChatInput from '@/components/ChatInput/index.tsx'
 import { MessageBubble } from '@/components/MessageBubble/index.tsx'
 

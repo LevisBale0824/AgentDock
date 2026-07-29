@@ -1,9 +1,22 @@
-import { List, Button, Typography, Space, Tag, Popconfirm } from 'antd'
+import { List, Button, Typography, Space, Tag, Popconfirm, Select } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { SessionSummary } from '@/http/index'
+import type { SessionSummary, ProviderInfo, AgentType } from '@/http/index'
 import { NEW_SESSION_ID } from '../useProjectPage'
 
 const { Text } = Typography
+
+/** 格式化时间戳：今天→HH:mm，昨天→昨天 HH:mm，更早→MM-DD HH:mm */
+function fmtTime(ts: number): string {
+  const d = new Date(ts)
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  if (d.toDateString() === now.toDateString()) return timeStr
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (d.toDateString() === yesterday.toDateString()) return `昨天 ${timeStr}`
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${timeStr}`
+}
 
 const C = {
   bg0: '#f7f7f8',
@@ -13,6 +26,13 @@ const C = {
   text1: '#888888',
 }
 
+const AGENT_COLOR: Record<string, string> = {
+  opencode: 'orange',
+  zero: 'purple',
+  kilo: 'green',
+  claude: 'blue',
+}
+
 interface Props {
   projectCwd: string
   sessions: SessionSummary[]
@@ -20,6 +40,9 @@ interface Props {
   onSelect: (id: string) => void
   onNew: () => void
   onDelete: (id: string) => void
+  agents: ProviderInfo[]
+  selectedAgent: AgentType
+  onSelectAgent: (a: AgentType) => void
 }
 
 export default function SessionList({
@@ -29,7 +52,12 @@ export default function SessionList({
   onSelect,
   onNew,
   onDelete,
+  agents,
+  selectedAgent,
+  onSelectAgent,
 }: Props) {
+  const showAgentSwitch = agents.length > 1
+
   return (
     <>
       <div style={{ padding: '10px 10px 8px', borderBottom: `1px solid ${C.bg3}`, flexShrink: 0 }}>
@@ -68,6 +96,15 @@ export default function SessionList({
         >
           新建会话
         </Button>
+        {showAgentSwitch && (
+          <Select
+            size="small"
+            value={selectedAgent}
+            onChange={(v) => onSelectAgent(v)}
+            options={agents.map((a) => ({ value: a.type, label: a.label }))}
+            style={{ width: '100%', marginTop: 6 }}
+          />
+        )}
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
@@ -111,6 +148,14 @@ export default function SessionList({
                     >
                       {s.title}
                     </Text>
+                    {showAgentSwitch && s.agent && (
+                      <Tag
+                        color={AGENT_COLOR[s.agent] ?? 'default'}
+                        style={{ fontSize: 10, padding: '0 3px', lineHeight: '15px' }}
+                      >
+                        {s.agent}
+                      </Tag>
+                    )}
                     {s.status === 'busy' && (
                       <Tag
                         color="orange"
@@ -120,6 +165,11 @@ export default function SessionList({
                       </Tag>
                     )}
                   </Space>
+                }
+                description={
+                  <Text style={{ fontSize: 11, color: C.text1 }}>
+                    {fmtTime(s.lastModified)}
+                  </Text>
                 }
               />
             </List.Item>

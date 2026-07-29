@@ -2,8 +2,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
-import { listSessions } from '@anthropic-ai/claude-agent-sdk'
 import { CLAUDE_PROJECTS_DIR } from '@/store'
+import { getProvider, listProviderInfos } from '@/providers/registry'
 import { logger } from '@/logger'
 
 /**
@@ -102,7 +102,7 @@ async function listProjects(): Promise<ProjectInfo[]> {
 
     if (files.length > 0) {
       try {
-        const sessions = await listSessions({ dir: fallbackCwd })
+        const sessions = await getProvider('claude').listSessions(fallbackCwd)
         for (const s of sessions) {
           if (s.lastModified > updatedAt) {
             updatedAt = s.lastModified
@@ -188,17 +188,16 @@ export async function projectRoutes(api: FastifyInstance) {
 
     const cwd = dirNameToCwd(id)
 
-    const sessions = await listSessions({ dir: cwd })
-    return sessions
-      .sort((a, b) => b.lastModified - a.lastModified)
-      .map((s) => ({
-        id: s.sessionId,
-        title: s.summary,
-        cwd,
-        lastModified: s.lastModified,
-        gitBranch: s.gitBranch,
-        createdAt: s.createdAt,
-      }))
+    // 从所有已注册 provider 拉取会话（不限于 claude），前端据此显示会话列表
+    const all: any[] = []
+    for (const info of listProviderInfos()) {
+      try {
+        const s = await getProvider(info.type).listSessions(cwd)
+        all.push(...s)
+      } catch { /* 该 provider 可能不支持或不认此目录 */ }
+    }
+    all.sort((a, b) => b.lastModified - a.lastModified)
+    return all
   })
 
   // ── 文件树 ──────────────────────────────────────────────

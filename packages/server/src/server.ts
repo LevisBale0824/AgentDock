@@ -9,6 +9,8 @@ import { findAvailablePort, getBestLocalIP } from './utils'
 import { projectRoutes } from './routes/project'
 import { sessionRoutes } from './routes/session'
 import { terminalRoutes } from './routes/terminal'
+import { initProviders } from './providers/init'
+import { listProviderInfos } from './providers/registry'
 import fs from 'fs'
 import path from 'path'
 import { exec } from 'child_process'
@@ -33,6 +35,8 @@ export async function startServer(opts: ServerOptions = {}): Promise<void> {
   })
   await app.register(cors, { origin: '*' })
   await app.register(wsPlugin)
+
+  await initProviders()
 
   await app.register(swagger, {
     openapi: {
@@ -75,6 +79,7 @@ export async function startServer(opts: ServerOptions = {}): Promise<void> {
   await app.register(
     async (api) => {
       api.get('/health', async () => ({ healthy: true, version: '0.1.0' }))
+      api.get('/agents', async () => listProviderInfos())
       await projectRoutes(api)
       await sessionRoutes(api)
       await terminalRoutes(api)
@@ -125,7 +130,14 @@ docs:
 
   if (process.env.NODE_ENV !== 'development') {
     const openUrl = `http://${localIP}:${availablePort}`
-    exec(`open "${openUrl}"`, (err) => {
+    // 跨平台打开浏览器：Windows 用 start（首参数是窗口标题，需空 ""），macOS 用 open，Linux 用 xdg-open
+    const cmd =
+      process.platform === 'win32'
+        ? `start "" "${openUrl}"`
+        : process.platform === 'darwin'
+          ? `open "${openUrl}"`
+          : `xdg-open "${openUrl}"`
+    exec(cmd, (err) => {
       if (err) {
         logger.warn({ err }, 'failed to open browser')
       }

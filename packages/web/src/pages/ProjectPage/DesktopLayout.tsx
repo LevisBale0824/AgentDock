@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Layout, Splitter, Tooltip } from 'antd'
-import { HomeOutlined } from '@ant-design/icons'
+import { HomeOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import ChatPanel from '@/components/ChatPanel/index.tsx'
 import TerminalPanel from '@/components/Terminal/index.tsx'
@@ -25,6 +26,7 @@ interface Props extends PageState {}
 
 export default function DesktopLayout(p: Props) {
   const navigate = useNavigate()
+  const [rightOpen, setRightOpen] = useState(true)
 
   return (
     <Layout
@@ -39,30 +41,40 @@ export default function DesktopLayout(p: Props) {
             <Splitter.Panel
               style={{ display: 'flex', flexDirection: 'row', overflow: 'hidden', minHeight: 0 }}
             >
-              {/* 返回首页 */}
-              <Tooltip title="返回主页" placement="right">
-                <div
-                  onClick={() => navigate('/')}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 6,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                    margin: '8px 6px 0',
-                    color: C.text1,
-                    fontSize: 14,
-                    transition: 'color 0.15s',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = C.text0)}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = C.text1)}
-                >
-                  <HomeOutlined />
-                </div>
-              </Tooltip>
+              {/* 左工具栏：返回 + 隐藏/显示右侧面板 */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, paddingTop: 8 }}>
+                <Tooltip title="返回主页" placement="right">
+                  <div
+                    onClick={() => navigate('/')}
+                    style={{
+                      width: 32, height: 32, borderRadius: 6,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', flexShrink: 0,
+                      color: C.text1, fontSize: 14, transition: 'color 0.15s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = C.text0)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = C.text1)}
+                  >
+                    <HomeOutlined />
+                  </div>
+                </Tooltip>
+                <Tooltip title={rightOpen ? '隐藏侧栏' : '显示侧栏'} placement="right">
+                  <div
+                    onClick={() => setRightOpen((v) => !v)}
+                    style={{
+                      width: 32, height: 32, borderRadius: 6,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', flexShrink: 0,
+                      color: rightOpen ? C.text0 : C.text1, fontSize: 14, transition: 'color 0.15s',
+                      background: rightOpen ? C.bg3 : 'transparent',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = C.text0)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = rightOpen ? C.text0 : C.text1)}
+                  >
+                    {rightOpen ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                  </div>
+                </Tooltip>
+              </div>
 
               <Splitter style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Session 列表 */}
@@ -78,11 +90,14 @@ export default function DesktopLayout(p: Props) {
                 >
                   <SessionList
                     projectCwd={p.projectCwd}
-                    sessions={p.sessions}
+                    sessions={p.sessionsView}
                     activeId={p.activeId}
                     onSelect={p.selectSession}
                     onNew={p.startNewSession}
                     onDelete={p.deleteSession}
+                    agents={p.agents}
+                    selectedAgent={p.selectedAgent}
+                    onSelectAgent={p.setSelectedAgent}
                   />
                 </Splitter.Panel>
 
@@ -116,45 +131,52 @@ export default function DesktopLayout(p: Props) {
                   />
                 </Splitter.Panel>
 
-                {/* 右侧面板（变更/文件） */}
+                {/* 右侧面板组（变更/文件 + 文件树），通过 eye 按钮统一收展 */}
                 <Splitter.Panel
-                  defaultSize="30%"
+                  defaultSize="42%"
+                  size={rightOpen ? undefined : 0}
                   min="20%"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: C.bg1,
-                    overflow: 'hidden',
-                  }}
+                  style={{ overflow: 'hidden' }}
                 >
-                  <RightPanel
-                    projectId={p.projectId ?? ''}
-                    rightPanel={p.rightPanel}
-                    onPanelChange={p.setRightPanel}
-                    fileDiffs={p.fileDiffs}
-                    selectedFile={p.selectedFile}
-                    fileLoading={p.fileLoading}
-                  />
-                </Splitter.Panel>
-
-                {/* 文件树 */}
-                <Splitter.Panel
-                  defaultSize="15%"
-                  min="10%"
-                  collapsible={{ start: true, end: true, showCollapsibleIcon: true }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: C.bg0,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <FileTreePanel
-                    fileTree={p.fileTree}
-                    treeSearch={p.treeSearch}
-                    onSearchChange={p.setTreeSearch}
-                    onSelectFile={p.openFile}
-                  />
+                  <Splitter>
+                    <Splitter.Panel
+                      defaultSize="65%"
+                      min="20%"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: C.bg1,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <RightPanel
+                        projectId={p.projectId ?? ''}
+                        rightPanel={p.rightPanel}
+                        onPanelChange={p.setRightPanel}
+                        fileDiffs={p.fileDiffs}
+                        selectedFile={p.selectedFile}
+                        fileLoading={p.fileLoading}
+                      />
+                    </Splitter.Panel>
+                    <Splitter.Panel
+                      defaultSize="35%"
+                      min="10%"
+                      collapsible={{ start: true, end: false, showCollapsibleIcon: true }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: C.bg0,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <FileTreePanel
+                        fileTree={p.fileTree}
+                        treeSearch={p.treeSearch}
+                        onSearchChange={p.setTreeSearch}
+                        onSelectFile={p.openFile}
+                      />
+                    </Splitter.Panel>
+                  </Splitter>
                 </Splitter.Panel>
               </Splitter>
             </Splitter.Panel>

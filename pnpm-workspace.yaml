@@ -1,2 +1,5 @@
 packages:
-  - "packages/*"
+  - packages/*
+
+patchedDependencies:
+  node-pty: patches/node-pty.patch

@@ -61,7 +61,7 @@ export default function MobileLayout(p: Props) {
           </div>
           <SessionList
             projectCwd={p.projectCwd}
-            sessions={p.sessions}
+            sessions={p.sessionsView}
             activeId={p.activeId}
             onSelect={(id) => {
               p.selectSession(id)
@@ -72,6 +72,9 @@ export default function MobileLayout(p: Props) {
               p.setMobileDrawerOpen(false)
             }}
             onDelete={p.deleteSession}
+            agents={p.agents}
+            selectedAgent={p.selectedAgent}
+            onSelectAgent={p.setSelectedAgent}
           />
         </div>
       </Drawer>

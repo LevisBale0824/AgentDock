@@ -6,10 +6,19 @@ export interface ProjectInfo {
   updatedAt: number
 }
 
+export type AgentType = 'claude' | 'opencode' | 'zero' | 'kilo'
+
+export interface ProviderInfo {
+  type: AgentType
+  label: string
+  capabilities: Record<string, boolean>
+}
+
 export interface SessionSummary {
   id: string
   title: string
   cwd: string
+  agent?: AgentType
   status: 'idle' | 'busy'
   lastModified: number
   gitBranch?: string
@@ -47,26 +56,30 @@ export interface SseDone {
   tokens?: { input: number; output: number; cache: { read: number; write: number } }
 }
 
-// SDK 原生 SessionMessage 类型
-export type SessionMessage = {
-  type: 'user' | 'assistant' | 'system'
-  uuid: string
-  session_id: string
-  message: unknown
-  parent_tool_use_id: null
-}
+// ── Canonical 消息模型（与 server providers/types.ts 对齐）──────────────────
+export type CanonicalPart =
+  | { type: 'text'; text: string }
+  | { type: 'reasoning'; text: string }
+  | { type: 'tool_call'; id: string; tool: string; input: unknown }
+  | {
+      type: 'tool_result'
+      id: string
+      content: string
+      isError?: boolean
+      images?: Array<{ mediaType: string; data: string }>
+    }
+  | { type: 'image'; mediaType: string; data: string }
+  | { type: 'step_start' }
 
-// SSE part 事件数据
-export interface SsePart {
-  type: 'text' | 'tool_call' | 'tool_result'
-  text?: string
-  callID?: string
-  tool?: string
-  input?: Record<string, unknown>
-  content?: string
+export interface CanonicalMessage {
+  id: string
+  role: 'user' | 'assistant'
+  parts: CanonicalPart[]
 }
 
 export const api = {
+  listAgents: (): Promise<ProviderInfo[]> => fetch(`${BASE}/agents`).then((r) => r.json()),
+
   listProjects: (): Promise<ProjectInfo[]> => fetch(`${BASE}/project`).then((r) => r.json()),
 
   linkProject: (
@@ -106,7 +119,7 @@ export const api = {
       body: JSON.stringify({ title }),
     }).then((r) => r.json()),
 
-  getMessages: (id: string): Promise<SessionMessage[]> =>
+  getMessages: (id: string): Promise<CanonicalMessage[]> =>
     fetch(`${BASE}/session/${id}/message`).then((r) => r.json()),
 
   /**
@@ -119,8 +132,9 @@ export const api = {
     content: ContentBlock[],
     bypassPermissions: boolean,
     cwd: string | undefined,
+    agent: AgentType | undefined,
     callbacks: {
-      onMessage: (msg: SessionMessage) => void
+      onMessage: (msg: CanonicalMessage) => void
       onDone: (done: SseDone) => void
       onError: (err: string) => void
       onAskUser?: (questions: AskUserQuestion[]) => void
@@ -129,7 +143,12 @@ export const api = {
     fetch(`${BASE}/session/${id}/message?stream=1`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, bypassPermissions, ...(cwd ? { cwd } : {}) }),
+      body: JSON.stringify({
+        content,
+        bypassPermissions,
+        ...(cwd ? { cwd } : {}),
+        ...(agent ? { agent } : {}),
+      }),
     }).then(async (r) => {
       if (!r.ok) {
         const err = await r.json()

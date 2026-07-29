@@ -14,5 +14,13 @@
   },
   "dependencies": {
     "concurrently": "^9.2.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "node-pty@1.1.0": "patches/node-pty.patch"
+    }
   }
 }

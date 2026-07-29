@@ -5,9 +5,12 @@ import type { TreeDataNode } from 'antd'
 import {
   api,
   type SessionSummary,
-  type SessionMessage,
+  type CanonicalMessage,
+  type CanonicalPart,
   type ContentBlock,
   type AskUserQuestion,
+  type ProviderInfo,
+  type AgentType,
 } from '@/http/index'
 import type { Attachment } from '@/components/ChatInput/index.tsx'
 import { type DisplayMessage } from '@/components/MessageBubble/index.tsx'
@@ -46,6 +49,8 @@ export function useProjectPage() {
   const [fileLoading, setFileLoading] = useState(false)
   const [treeSearch, setTreeSearch] = useState('')
   const [bypassPermissions, setBypassPermissions] = useState(true)
+  const [agents, setAgents] = useState<ProviderInfo[]>([])
+  const [selectedAgent, setSelectedAgent] = useState<AgentType>('claude')
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<'chat' | 'review'>('chat')
   const [pendingQuestion, setPendingQuestion] = useState<{
@@ -57,50 +62,41 @@ export function useProjectPage() {
 
   const activeSession = sessions.find((s) => s.id === activeId)
 
-  const hasRealInput = (content: any[]): boolean =>
-    content.some(
-      (b: any) =>
-        b.type === 'image_url' ||
-        b.type === 'image' ||
-        (b.type === 'text' && !b?.text?.trimStart?.()?.startsWith?.('<ide_'))
+  const filterIdeParts = (parts: CanonicalPart[]): CanonicalPart[] =>
+    parts.filter((p) => !(p.type === 'text' && p.text?.trimStart()?.startsWith?.('<ide_')))
+
+  const hasUserContent = (parts: CanonicalPart[]): boolean =>
+    parts.some(
+      (p) => p.type === 'image' || (p.type === 'text' && !p.text?.trimStart()?.startsWith?.('<ide_'))
     )
 
-  const hasRealAssistantContent = (sdkMessage: SessionMessage): boolean => {
-    const content: any[] = Array.isArray((sdkMessage.message as any)?.content)
-      ? (sdkMessage.message as any).content
-      : []
-    return content.some((b: any) => b.type !== 'redacted_thinking')
-  }
+  const hasAssistantContent = (parts: CanonicalPart[]): boolean =>
+    parts.some((p) => !(p.type === 'reasoning' && p.text === '[redacted thinking]'))
 
-  const filterSdkMsg = (sdkMessage: SessionMessage) => {
-    // @ts-ignore
-    const content = sdkMessage.message.content
-    const filteredContent = content.filter(
-      (b: any) => !(b.type === 'text' && b.text?.trimStart?.()?.startsWith?.('<ide_'))
+  const blocksToParts = (blocks: ContentBlock[]): CanonicalPart[] =>
+    blocks.map((b) =>
+      b.type === 'image'
+        ? { type: 'image', mediaType: b.media_type, data: b.data }
+        : { type: 'text', text: b.text }
     )
-    return { ...sdkMessage, message: { ...(sdkMessage.message as any), content: filteredContent } }
-  }
 
   async function loadMessages(id: string) {
     setMsgLoading(true)
     try {
-      const sdkMsgs = await api.getMessages(id)
+      const msgs = await api.getMessages(id)
       const displayed: DisplayMessage[] = []
-      for (const m of sdkMsgs) {
-        if (m.type === 'user') {
-          const msg = m.message as any
-          const content: any[] = Array.isArray(msg?.content) ? msg.content : []
-          if (hasRealInput(content)) {
-            displayed.push({ id: m.uuid, role: 'user', sdkMessages: [filterSdkMsg(m)] })
-          }
-        } else if (m.type === 'assistant') {
-          if (hasRealAssistantContent(m)) {
-            displayed.push({ id: m.uuid, role: 'assistant', sdkMessages: [m] })
+      for (const m of msgs) {
+        if (m.role === 'user') {
+          const parts = filterIdeParts(m.parts)
+          if (hasUserContent(parts)) displayed.push({ id: m.id, role: 'user', parts })
+        } else if (m.role === 'assistant') {
+          if (hasAssistantContent(m.parts)) {
+            displayed.push({ id: m.id, role: 'assistant', parts: m.parts })
           }
         }
       }
       setMessages(displayed)
-      setFileDiffs(extractDiffsFromMessages(sdkMsgs))
+      setFileDiffs(extractDiffsFromMessages(msgs))
     } finally {
       setMsgLoading(false)
     }
@@ -253,20 +249,14 @@ export function useProjectPage() {
 
     const content = buildContent(raw, attachments)
 
-    const userSdkMsg: SessionMessage = {
-      type: 'user',
-      uuid: 'tmp_user',
-      session_id: '',
-      parent_tool_use_id: null,
-      message: { role: 'user', content: content as any },
-    }
+    const userParts = blocksToParts(content)
 
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: 'tmp_user',
         role: 'user' as DisplayMessage['role'],
-        sdkMessages: [userSdkMsg],
+        parts: userParts,
       },
     ])
     setSessions((prev) =>
@@ -278,35 +268,34 @@ export function useProjectPage() {
     const cwd = projectCwd
 
     try {
-      await api.sendMessageStream(sendId, content, bypassPermissions, cwd, {
+      await api.sendMessageStream(
+        sendId,
+        content,
+        bypassPermissions,
+        cwd,
+        isNew ? selectedAgent : undefined,
+        {
         onAskUser: (questions) => {
           setPendingQuestion({ sessionId: pendingNewCwd.current ? '' : sessionId, questions })
         },
-        onMessage: (sdkMsg) => {
-          if (sdkMsg.type === 'assistant') {
-            const incoming = extractDiffsFromMessages([sdkMsg])
+        onMessage: (msg) => {
+          if (msg.role === 'assistant') {
+            const incoming = extractDiffsFromMessages([msg])
             if (incoming.length > 0) setFileDiffs((prev) => mergeDiffs(prev, incoming))
           }
           setMessages((prev) => {
-            if (sdkMsg.type === 'user') {
-              const content: any[] = Array.isArray((sdkMsg.message as any)?.content)
-                ? (sdkMsg.message as any).content
-                : []
-              if (!hasRealInput(content)) return prev
-              // 用真实消息替换临时的 tmp_user 占位
-              return prev.map((m) =>
-                m.id === 'tmp_user' || m.sdkMessages[0]?.uuid === 'tmp_user'
-                  ? { ...m, id: sdkMsg.uuid, sdkMessages: [filterSdkMsg(sdkMsg)] }
-                  : m
-              )
-            } else if (sdkMsg.type === 'assistant') {
-              if (!hasRealAssistantContent(sdkMsg)) return prev
+            if (msg.role === 'user') {
+              const parts = filterIdeParts(msg.parts)
+              if (!hasUserContent(parts)) return prev
+              return prev.map((m) => (m.id === 'tmp_user' ? { ...m, id: msg.id, parts } : m))
+            } else if (msg.role === 'assistant') {
+              if (!hasAssistantContent(msg.parts)) return prev
               return [
                 ...prev,
                 {
-                  id: sdkMsg.uuid,
+                  id: msg.id,
                   role: 'assistant' as DisplayMessage['role'],
-                  sdkMessages: [sdkMsg],
+                  parts: msg.parts,
                 },
               ]
             }
@@ -317,9 +306,17 @@ export function useProjectPage() {
           setPendingQuestion(null)
           const realId = doneData.sessionId
           setActiveId(realId)
-          setSessions((prev) =>
-            prev.map((s) => (s.id === realId ? { ...s, status: 'idle' as const } : s))
-          )
+          setSessions((prev) => {
+            // 找不到 realId 会话 → 把 'new' 占位会话升级为真实会话
+            if (!prev.some((s) => s.id === realId)) {
+              return prev.map((s) =>
+                s.id === NEW_SESSION_ID
+                  ? { ...s, id: realId, status: 'idle' as const, agent: selectedAgent }
+                  : s
+              )
+            }
+            return prev.map((s) => (s.id === realId ? { ...s, status: 'idle' as const } : s))
+          })
           if (projectId) {
             api
               .getFileTree(projectId)
@@ -342,6 +339,10 @@ export function useProjectPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    api.listAgents().then(setAgents).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!projectId) return
@@ -379,10 +380,16 @@ export function useProjectPage() {
     console.log('messages', messages)
   }, [messages])
 
+  // 按当前选中的 agent 过滤会话列表：切换 agent 时只显示对应的会话
+  const sessionsView = sessions.filter(
+    (s) => s.agent === selectedAgent || s.id === NEW_SESSION_ID
+  )
+
   return {
     projectId,
     projectCwd,
     sessions,
+    sessionsView,
     activeId,
     activeSession,
     messages,
@@ -403,6 +410,9 @@ export function useProjectPage() {
     setTreeSearch,
     bypassPermissions,
     setBypassPermissions,
+    agents,
+    selectedAgent,
+    setSelectedAgent,
     mobileDrawerOpen,
     setMobileDrawerOpen,
     mobileTab,

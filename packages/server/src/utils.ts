@@ -8,7 +8,9 @@ export async function findAvailablePort(startPort: number): Promise<number> {
       const srv = net.createServer()
       srv.once('error', () => check(port + 1))
       srv.once('listening', () => srv.close(() => resolve(port)))
-      srv.listen(port)
+      // 必须显式绑 127.0.0.1：agent server（opencode serve 等）默认监听 127.0.0.1，
+      // 不指定 host 时 Node 会绑 IPv6 '::'，与 127.0.0.1 不冲突，会把已占端口误判为空闲。
+      srv.listen(port, '127.0.0.1')
     }
     check(startPort)
   })
