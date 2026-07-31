@@ -12,6 +12,8 @@
     margin: 12px 0 6px;
     font-weight: 600;
     line-height: 1.3;
+    font-family: var(--font-display);
+    color: var(--txt);
   }
   h1 { font-size: 18px; }
   h2 { font-size: 16px; }
@@ -24,21 +26,24 @@
   li { margin: 2px 0; }
 
   code {
-    background: rgba(0, 0, 0, 0.06);
-    border-radius: 3px;
+    background: var(--glass-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 4px;
     padding: 1px 5px;
     font-size: 12px;
-    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-family: var(--font-mono);
   }
 
   pre {
-    background: rgba(0, 0, 0, 0.06);
-    border-radius: 6px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
     padding: 10px 12px;
     overflow-x: auto;
     margin: 6px 0;
     code {
       background: none;
+      border: none;
       padding: 0;
       font-size: 12px;
     }
@@ -51,30 +56,30 @@
     font-size: 13px;
   }
   th, td {
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--line);
     padding: 5px 10px;
     text-align: left;
   }
   th {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--glass-2);
     font-weight: 600;
   }
 
   blockquote {
     margin: 6px 0;
     padding: 4px 12px;
-    border-left: 3px solid #d0d0d0;
-    color: #666;
+    border-left: 3px solid var(--acc);
+    color: var(--txt-sub);
   }
 
   hr {
     border: none;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid var(--line);
     margin: 10px 0;
   }
 
   a {
-    color: #1677ff;
+    color: var(--acc);
     text-decoration: none;
     &:hover { text-decoration: underline; }
   }
