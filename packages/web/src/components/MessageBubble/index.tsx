@@ -33,8 +33,8 @@ function DiffView({ oldStr, newStr }: { oldStr: string; newStr: string }) {
           <div
             key={`-${i}`}
             style={{
-              background: '#fff2f0',
-              color: '#cf1322',
+              background: 'rgba(255,92,92,.10)',
+              color: 'var(--danger)',
               padding: '0 6px',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all',
@@ -48,8 +48,8 @@ function DiffView({ oldStr, newStr }: { oldStr: string; newStr: string }) {
           <div
             key={`+${i}`}
             style={{
-              background: '#f6ffed',
-              color: '#389e0d',
+              background: 'rgba(0,255,163,.10)',
+              color: 'var(--acc)',
               padding: '0 6px',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-all',
@@ -139,7 +139,7 @@ function ToolCallBlock({ part }: { part: Extract<CanonicalPart, { type: 'tool_ca
                 }}
               >
                 <ToolOutlined style={{ fontSize: 11, flexShrink: 0, marginRight: '5px' }} />
-                <span style={{ fontWeight: 500 }}>{name}</span>
+                <span className="font-mono" style={{ fontWeight: 500, color: 'var(--acc)' }}>{name}</span>
               </div>
             ),
             children: (
@@ -400,7 +400,7 @@ function PartListView({ msg }: { msg: CanonicalMessage }) {
 function ThinkingIndicator() {
   return (
     <span
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#999', fontSize: 12 }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--txt-sub)', fontSize: 12 }}
     >
       <LoadingOutlined spin style={{ fontSize: 11 }} />
       Thinking…
@@ -440,10 +440,12 @@ export function MessageBubble({ msg, pending }: { msg: DisplayMessage; pending?:
   const bubbleStyle = {
     position: 'relative' as const,
     width: '100%',
-    background: isUser ? token.colorFillAlter : '',
-    borderRadius: 10,
-    color: '#1a1a1a',
-    padding: isUser ? '8px 2px' : '4px 13px',
+    background: isUser ? 'var(--glass-2)' : 'transparent',
+    border: isUser ? '1px solid var(--line)' : 'none',
+    borderLeft: isUser ? 'none' : '2px solid var(--acc)',
+    borderRadius: isUser ? 10 : 0,
+    color: 'var(--txt)',
+    padding: isUser ? '8px 12px' : '4px 13px',
     margin: isUser ? '28px 0 2px 0' : '0',
     lineHeight: 1.6,
   }
@@ -459,7 +461,7 @@ export function MessageBubble({ msg, pending }: { msg: DisplayMessage; pending?:
     >
       <Space size={5} style={{ marginBottom: 5 }}>
         {msg.cost != null && msg.cost > 0 && (
-          <Text style={{ fontSize: 10, color: '#bbb' }}>${msg.cost.toFixed(5)}</Text>
+          <Text className="font-mono" style={{ fontSize: 10, color: 'var(--txt-dim)' }}>${msg.cost.toFixed(5)}</Text>
         )}
       </Space>
       <div style={bubbleStyle}>

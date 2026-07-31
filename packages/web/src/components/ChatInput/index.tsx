@@ -404,7 +404,7 @@ export default function ChatInput({
               highlighter: { padding: '8px 12px', border: '1px solid transparent' },
               input: {
                 padding: '8px 12px',
-                border: '1px solid #d9d9d9',
+                border: '1px solid var(--line)',
                 borderRadius: 8,
                 outline: 'none',
                 resize: 'none',
@@ -424,8 +424,8 @@ export default function ChatInput({
               width: '100%',
               marginBottom: 8,
               list: {
-                background: '#fff',
-                border: '1px solid #e8e8e8',
+                background: 'var(--bg-elev)',
+                border: '1px solid var(--line)',
                 borderRadius: 8,
                 boxShadow: '0 -4px 12px rgba(0,0,0,0.1)',
                 fontSize: 13,
@@ -436,7 +436,7 @@ export default function ChatInput({
               item: {
                 padding: '6px 12px',
                 cursor: 'pointer',
-                '&focused': { background: '#e6f4ff' },
+                '&focused': { background: 'var(--acc-soft)' },
               },
             },
           }}
@@ -446,7 +446,7 @@ export default function ChatInput({
             data={fetchFiles}
             displayTransform={(_id, display) => `@${display}`}
             markup="@[__display__](__id__)"
-            style={{ backgroundColor: '#e6f4ff', borderRadius: 3 }}
+            style={{ backgroundColor: 'var(--acc-soft)', borderRadius: 3 }}
             renderSuggestion={(suggestion) => {
               const s = suggestion as FileSuggestion
               const name = String(s.display).split('/').pop() ?? ''
@@ -477,7 +477,7 @@ export default function ChatInput({
             data={fetchCommands}
             displayTransform={(_id) => `/${_id}`}
             markup="/__id__"
-            style={{ backgroundColor: '#f6ffed', borderRadius: 3 }}
+            style={{ backgroundColor: 'var(--acc-soft)', borderRadius: 3 }}
             renderSuggestion={(suggestion) => {
               const s = suggestion as CommandSuggestion
               return (

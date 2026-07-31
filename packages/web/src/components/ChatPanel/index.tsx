@@ -100,7 +100,7 @@ function AskUserCard({
   return (
     <Card
       size="small"
-      style={{ margin: '8px 0', borderColor: '#1677ff33', background: '#f0f5ff' }}
+      style={{ margin: '8px 0', borderColor: 'var(--acc-line)', background: 'var(--acc-soft)' }}
       title={<span style={{ fontSize: 12 }}>您希望我如何处理</span>}
       bodyStyle={{
         paddingTop: '0px',
@@ -118,7 +118,7 @@ function AskUserCard({
                 const tag = (
                   <Tag
                     key={opt.label}
-                    color={isSelected ? 'blue' : 'default'}
+                    color={isSelected ? 'green' : 'default'}
                     style={{ cursor: 'pointer', userSelect: 'none', fontSize: 12 }}
                     onClick={() => toggle(q.question, opt.label, q.multiSelect)}
                   >
@@ -157,7 +157,7 @@ function AskUserCard({
                 )
               })}
               <Tag
-                color={showOther[q.question] ? 'blue' : 'default'}
+                color={showOther[q.question] ? 'green' : 'default'}
                 style={{ cursor: 'pointer', userSelect: 'none', fontSize: 12 }}
                 onClick={() => toggle(q.question, OTHER_KEY, q.multiSelect)}
               >
@@ -198,11 +198,11 @@ function AskUserCard({
 const { Text } = Typography
 
 const C = {
-  bg0: '#f7f7f8',
-  bg1: '#ffffff',
-  bg3: '#e8e8ec',
-  text0: '#1a1a1a',
-  text2: '#bbb',
+  bg0: 'var(--bg)',
+  bg1: 'var(--bg-soft)',
+  bg3: 'var(--line)',
+  text0: 'var(--txt)',
+  text2: 'var(--txt-dim)',
 }
 
 function ChatContent({
@@ -302,7 +302,7 @@ export default function ChatPanel({
           justifyContent: 'space-between',
         }}
       >
-        <Text style={{ fontSize: 13, color: C.text0, fontWeight: 500 }}>
+        <Text className="font-display" style={{ fontSize: 15, color: C.text0, fontWeight: 600 }}>
           {sessionTitle ?? '选择或新建一个会话'}
         </Text>
       </div>
@@ -359,7 +359,7 @@ export default function ChatPanel({
             left: 22,
             bottom: 14,
             border: `1px solid ${C.bg3}`,
-            background: 'white',
+            background: 'var(--bg-elev)',
             transition: '1s',
             opacity: loading ? 1 : 0,
             borderRadius: 12,
