@@ -307,6 +307,8 @@ export function useProjectPage() {
           const realId = doneData.sessionId
           setActiveId(realId)
           setSessions((prev) => {
+            // realId 为空（新建会话未拿到真实 id）→ 无法升级占位会话，保留原样
+            if (!realId) return prev
             // 找不到 realId 会话 → 把 'new' 占位会话升级为真实会话
             if (!prev.some((s) => s.id === realId)) {
               return prev.map((s) =>
