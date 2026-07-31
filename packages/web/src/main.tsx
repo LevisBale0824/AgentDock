@@ -1,6 +1,5 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import '@fontsource-variable/fraunces'
 import '@fontsource-variable/manrope'
 import '@fontsource-variable/jetbrains-mono'
 import '@/styles/markdown.less'

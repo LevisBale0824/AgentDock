@@ -64,7 +64,7 @@ let highlighterPromise: Promise<Highlighter> | null = null
 function getHighlighter(): Promise<Highlighter> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
-      themes: ['vitesse-dark'],
+      themes: ['vitesse-light'],
       langs: Object.values(EXT_LANG).filter((v, i, a) => a.indexOf(v) === i),
     })
   }
@@ -147,7 +147,7 @@ function CodeViewer({ code, lang, filePath }: { code: string; lang?: string; fil
     getHighlighter()
       .then((hl) => {
         if (cancelled) return
-        setHtml(hl.codeToHtml(code, { lang, theme: 'vitesse-dark' }))
+        setHtml(hl.codeToHtml(code, { lang, theme: 'vitesse-light' }))
       })
       .catch(() => setHtml(null))
     return () => {

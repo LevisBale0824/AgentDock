@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Layout, Splitter, Tooltip } from 'antd'
-import { HomeOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons'
+import { HomeOutlined, DiffOutlined, FolderOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import ChatPanel from '@/components/ChatPanel/index.tsx'
 import TerminalPanel from '@/components/Terminal/index.tsx'
@@ -26,7 +26,8 @@ interface Props extends PageState {}
 
 export default function DesktopLayout(p: Props) {
   const navigate = useNavigate()
-  const [rightOpen, setRightOpen] = useState(true)
+  const [reviewOpen, setReviewOpen] = useState(true)
+  const [treeOpen, setTreeOpen] = useState(true)
 
   return (
     <Layout
@@ -58,20 +59,36 @@ export default function DesktopLayout(p: Props) {
                     <HomeOutlined />
                   </div>
                 </Tooltip>
-                <Tooltip title={rightOpen ? '隐藏侧栏' : '显示侧栏'} placement="right">
+                <Tooltip title={reviewOpen ? '隐藏变更面板' : '显示变更面板'} placement="right">
                   <div
-                    onClick={() => setRightOpen((v) => !v)}
+                    onClick={() => setReviewOpen((v) => !v)}
                     style={{
                       width: 32, height: 32, borderRadius: 6,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer', flexShrink: 0,
-                      color: rightOpen ? C.text0 : C.text1, fontSize: 14, transition: 'color 0.15s',
-                      background: rightOpen ? C.bg3 : 'transparent',
+                      color: reviewOpen ? C.text0 : C.text1, fontSize: 14, transition: 'color 0.15s',
+                      background: reviewOpen ? C.bg3 : 'transparent',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = C.text0)}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = rightOpen ? C.text0 : C.text1)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = reviewOpen ? C.text0 : C.text1)}
                   >
-                    {rightOpen ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                    <DiffOutlined />
+                  </div>
+                </Tooltip>
+                <Tooltip title={treeOpen ? '隐藏文件树' : '显示文件树'} placement="right">
+                  <div
+                    onClick={() => setTreeOpen((v) => !v)}
+                    style={{
+                      width: 32, height: 32, borderRadius: 6,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', flexShrink: 0,
+                      color: treeOpen ? C.text0 : C.text1, fontSize: 14, transition: 'color 0.15s',
+                      background: treeOpen ? C.bg3 : 'transparent',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = C.text0)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = treeOpen ? C.text0 : C.text1)}
+                  >
+                    <FolderOutlined />
                   </div>
                 </Tooltip>
               </div>
@@ -134,13 +151,14 @@ export default function DesktopLayout(p: Props) {
                 {/* 右侧面板组（变更/文件 + 文件树），通过 eye 按钮统一收展 */}
                 <Splitter.Panel
                   defaultSize="42%"
-                  size={rightOpen ? undefined : 0}
+                  size={reviewOpen || treeOpen ? undefined : 0}
                   min="20%"
                   style={{ overflow: 'hidden' }}
                 >
                   <Splitter>
                     <Splitter.Panel
                       defaultSize="65%"
+                      size={reviewOpen ? undefined : 0}
                       min="20%"
                       style={{
                         display: 'flex',
@@ -160,6 +178,7 @@ export default function DesktopLayout(p: Props) {
                     </Splitter.Panel>
                     <Splitter.Panel
                       defaultSize="35%"
+                      size={treeOpen ? undefined : 0}
                       min="10%"
                       collapsible={{ start: true, end: false, showCollapsibleIcon: true }}
                       style={{

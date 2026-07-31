@@ -33,8 +33,8 @@ function DiffLines({ diff }: { diff: FileDiff }) {
           style={{
             display: 'flex',
             background:
-              line.type === 'added' ? 'rgba(0,255,163,.10)' : line.type === 'removed' ? 'rgba(255,92,92,.10)' : undefined,
-            borderLeft: `2px solid ${line.type === 'added' ? 'var(--acc)' : line.type === 'removed' ? 'var(--danger)' : 'transparent'}`,
+              line.type === 'added' ? 'rgba(22,163,74,.10)' : line.type === 'removed' ? 'rgba(255,92,92,.10)' : undefined,
+            borderLeft: `2px solid ${line.type === 'added' ? '#16A34A' : line.type === 'removed' ? 'var(--danger)' : 'transparent'}`,
           }}
         >
           <span
@@ -53,7 +53,7 @@ function DiffLines({ diff }: { diff: FileDiff }) {
               padding: '0 8px',
               whiteSpace: 'pre',
               color:
-                line.type === 'added' ? 'var(--acc)' : line.type === 'removed' ? 'var(--danger)' : 'var(--txt)',
+                line.type === 'added' ? '#16A34A' : line.type === 'removed' ? 'var(--danger)' : 'var(--txt)',
             }}
           >
             {line.content}
@@ -66,7 +66,7 @@ function DiffLines({ diff }: { diff: FileDiff }) {
 
 function CollapseLabel({ diff }: { diff: FileDiff }) {
   const statusColor =
-    diff.status === 'added' ? 'var(--acc)' : diff.status === 'deleted' ? 'var(--danger)' : 'var(--txt-sub)'
+    diff.status === 'added' ? '#16A34A' : diff.status === 'deleted' ? 'var(--danger)' : 'var(--txt-sub)'
   const statusLabel = diff.status === 'added' ? 'A' : diff.status === 'deleted' ? 'D' : 'M'
   const fileName = diff.file.split('/').pop() ?? diff.file
 
@@ -103,7 +103,7 @@ function CollapseLabel({ diff }: { diff: FileDiff }) {
           <span style={{ color: 'var(--txt-dim)', marginLeft: 6, fontSize: 11 }}>{diff.file}</span>
         )}
       </span>
-      <span style={{ fontSize: 11, color: 'var(--acc)', flexShrink: 0 }}>+{diff.additions}</span>
+      <span style={{ fontSize: 11, color: '#16A34A', flexShrink: 0 }}>+{diff.additions}</span>
       <span style={{ fontSize: 11, color: 'var(--danger)', flexShrink: 0, marginLeft: 4 }}>
         -{diff.deletions}
       </span>

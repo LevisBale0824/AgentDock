@@ -48,7 +48,7 @@ function DiffView({ oldStr, newStr }: { oldStr: string; newStr: string }) {
           <div
             key={`+${i}`}
             style={{
-              background: 'rgba(0,255,163,.10)',
+              background: 'rgba(22,163,74,.10)',
               color: 'var(--acc)',
               padding: '0 6px',
               whiteSpace: 'pre-wrap',
