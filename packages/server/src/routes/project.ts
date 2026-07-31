@@ -4,6 +4,7 @@ import path from 'path'
 import os from 'os'
 import { CLAUDE_PROJECTS_DIR } from '@/store'
 import { getProvider, listProviderInfos } from '@/providers/registry'
+import type { AgentType } from '@/providers/types'
 import { logger } from '@/logger'
 
 /**
@@ -198,6 +199,24 @@ export async function projectRoutes(api: FastifyInstance) {
     }
     all.sort((a, b) => b.lastModified - a.lastModified)
     return all
+  })
+
+  // ── 当前项目可用的 slash 命令 / skills（供输入框 / 自动补全）─────────────
+  api.get('/project/:id/commands', async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string }
+    const q = req.query as { agent?: AgentType }
+    const cwd = dirNameToCwd(id)
+    if (!fs.existsSync(cwd)) return reply.code(404).send({ error: 'Project not found' })
+
+    // provider 可能未注册（如 opencode 尚未注册）或未实现 listCommands → 返回空数组，前端走兜底
+    let provider
+    try {
+      provider = getProvider(q.agent ?? 'claude')
+    } catch {
+      return { commands: [] }
+    }
+    const commands = (await provider.listCommands?.(cwd)) ?? []
+    return { commands }
   })
 
   // ── 文件树 ──────────────────────────────────────────────

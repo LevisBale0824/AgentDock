@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { theme, App, Button, Tooltip } from 'antd'
 import { PlusOutlined, CloseOutlined, FileOutlined } from '@ant-design/icons'
 import { MentionsInput, Mention, type SuggestionDataItem } from 'react-mentions'
@@ -25,12 +25,21 @@ interface Props {
   activeProjectID: string | null
 }
 
-const COMMANDS: SuggestionDataItem[] = [
-  { id: 'init', display: 'init（分析项目结构，生成CLAUDE.md）' },
-  { id: 'cost', display: 'cost（当前会话的 Token 消耗量与预估）' },
-  { id: 'context', display: 'context（可视化上下文窗口使用量）' },
-  { id: 'clear', display: 'clear（清除当前会话的全部消息）' },
+type CommandSuggestion = SuggestionDataItem & { description?: string }
+
+// 本地客户端命令（init/cost/context/clear 不在 SDK 的 supportedCommands() 里，需前端补上）
+const LOCAL_COMMANDS: CommandSuggestion[] = [
+  { id: 'init', display: 'init', description: '分析项目结构，生成 CLAUDE.md' },
+  { id: 'cost', display: 'cost', description: '当前会话的 Token 消耗量与预估' },
+  { id: 'context', display: 'context', description: '可视化上下文窗口使用量' },
+  { id: 'clear', display: 'clear', description: '清除当前会话的全部消息' },
 ]
+
+/** 把本地命令前置并入动态列表，按 name 去重 */
+function mergeCommands(dynamic: CommandSuggestion[]): CommandSuggestion[] {
+  const names = new Set(dynamic.map((c) => c.id))
+  return [...LOCAL_COMMANDS.filter((c) => !names.has(c.id)), ...dynamic]
+}
 
 const MAX_SIZE_IMAGE = 2 * 1024 * 1024 // 图片 2MB，超过 base64 传输慢且 token 消耗高
 const MAX_SIZE_TEXT = 200 * 1024 // 文本文件 200KB，避免占满 context window
@@ -132,6 +141,68 @@ export default function ChatInput({
       } catch {
         callback([])
       }
+    },
+    [activeProjectID]
+  )
+
+  // ── / 命令（skills / workflows / commands）─────────────────────────────────
+  // 按 projectID 缓存整表（后端首次列举要起 claude 子进程 ~5s，绝不能每键触发）
+  const commandsCacheRef = useRef<Map<string, CommandSuggestion[]>>(new Map())
+
+  // 切换项目时预取，尽量让用户敲 / 时命中缓存
+  useEffect(() => {
+    if (!activeProjectID || commandsCacheRef.current.has(activeProjectID)) return
+    api
+      .getProjectCommands(activeProjectID, 'claude')
+      .then(({ commands }) => {
+        // 动态 skills + 本地命令（init/cost/context/clear）合并，按 name 去重
+        const list: CommandSuggestion[] = commands.length
+          ? mergeCommands(
+              commands.map((c) => ({ id: c.name, display: c.name, description: c.description }))
+            )
+          : LOCAL_COMMANDS
+        commandsCacheRef.current.set(activeProjectID, list)
+      })
+      .catch(() => {
+        commandsCacheRef.current.set(activeProjectID, LOCAL_COMMANDS)
+      })
+  }, [activeProjectID])
+
+  const fetchCommands = useCallback(
+    async (query: string, callback: (data: CommandSuggestion[]) => void) => {
+      const fallback = (q: string) =>
+        callback(
+          q
+            ? LOCAL_COMMANDS.filter((c) =>
+                `${c.display} ${c.description ?? ''}`.toLowerCase().includes(q.toLowerCase())
+              )
+            : LOCAL_COMMANDS
+        )
+
+      if (!activeProjectID) return fallback(query)
+
+      let list = commandsCacheRef.current.get(activeProjectID)
+      if (!list) {
+        // 预取未完成（或刚加载）时同步拉一次
+        try {
+          const { commands } = await api.getProjectCommands(activeProjectID, 'claude')
+          list = commands.length
+            ? mergeCommands(
+                commands.map((c) => ({ id: c.name, display: c.name, description: c.description }))
+              )
+            : LOCAL_COMMANDS
+          commandsCacheRef.current.set(activeProjectID, list)
+        } catch {
+          return fallback(query)
+        }
+      }
+
+      const filtered = query
+        ? list.filter((c) =>
+            `${c.display} ${c.description ?? ''}`.toLowerCase().includes(query.toLowerCase())
+          )
+        : list
+      callback(filtered)
     },
     [activeProjectID]
   )
@@ -403,10 +474,39 @@ export default function ChatInput({
           />
           <Mention
             trigger="/"
-            data={COMMANDS}
+            data={fetchCommands}
             displayTransform={(_id) => `/${_id}`}
             markup="/__id__"
             style={{ backgroundColor: '#f6ffed', borderRadius: 3 }}
+            renderSuggestion={(suggestion) => {
+              const s = suggestion as CommandSuggestion
+              return (
+                <div
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    padding: '2px 0',
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>/{s.display}</span>
+                  {s.description ? (
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: token.colorTextSecondary,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {s.description}
+                    </span>
+                  ) : null}
+                </div>
+              )
+            }}
           />
         </MentionsInput>
       </div>

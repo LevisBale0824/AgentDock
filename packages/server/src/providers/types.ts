@@ -93,6 +93,17 @@ export interface AgentOptions {
   thinking?: { type: 'enabled'; budget_tokens: number }
 }
 
+// ── Slash 命令 / Skill（与 SDK 的 SlashCommand 对齐）─────────────────────────
+// supportedCommands() 返回的统一列表：涵盖内置命令、自定义命令、skills、workflows
+export interface SlashCommand {
+  /** 名称（不含前导 /） */
+  name: string
+  /** 描述 */
+  description: string
+  /** 参数提示，如 "<file>" */
+  argumentHint: string
+}
+
 // ── 运行请求 ─────────────────────────────────────────────────────────────────
 export interface RunRequest {
   cwd: string
@@ -144,4 +155,8 @@ export interface AgentProvider {
   // ── 控制 ──
   abort(sessionId: string): void
   resolveApproval(sessionId: string, decision: ApprovalDecision): boolean
+
+  // ── 发现 ──
+  /** 列出当前 cwd 下可用的 slash 命令 / skills（可选；未实现则前端走兜底） */
+  listCommands?(cwd: string): Promise<SlashCommand[]>
 }

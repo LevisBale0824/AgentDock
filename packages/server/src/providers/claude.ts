@@ -39,6 +39,7 @@ import type {
   ProviderEvent,
   RunRequest,
   RunResult,
+  SlashCommand,
   TokenUsage,
 } from './types'
 import { AsyncQueue } from './queue'
@@ -208,6 +209,12 @@ const CAPABILITIES: BackendCapabilities = {
   diff: true,
   blocking: true,
 }
+
+// ── slash 命令 / skills 列举的进程级缓存 ──────────────────────────────────────
+// cwd → 命令列表（进程生命周期内常驻；安装新 skill 需重启服务，v1 可接受）
+const commandsCache = new Map<string, SlashCommand[]>()
+// 进行中的请求去重：避免首次并发（连敲 /）触发多个 claude 子进程
+const inflightCommands = new Map<string, Promise<SlashCommand[]>>()
 
 export const claudeProvider: AgentProvider = {
   type: 'claude',
@@ -398,5 +405,45 @@ export const claudeProvider: AgentProvider = {
 
   resolveApproval(sessionId, decision: ApprovalDecision) {
     return resolvePendingApproval(sessionId, decision)
+  },
+
+  // ── 发现：列出当前 cwd 下可用的 slash 命令 / skills ──
+  async listCommands(cwd: string): Promise<SlashCommand[]> {
+    const cached = commandsCache.get(cwd)
+    if (cached) return cached
+    const pending = inflightCommands.get(cwd)
+    if (pending) return pending
+
+    const p = (async (): Promise<SlashCommand[]> => {
+      // 永不 yield 的 async iterable：仅用于进入 streaming-input 模式，
+      // 让 Query 上的 supportedCommands() 可用，但不发送任何真实用户消息。
+      const ac = new AbortController()
+      async function* idlePrompt() {
+        await new Promise<never>(() => {})
+      }
+
+      const q = query({
+        prompt: idlePrompt(),
+        options: { cwd, abortController: ac },
+      })
+      try {
+        const cmds = (await q.supportedCommands()) as SlashCommand[]
+        commandsCache.set(cwd, cmds)
+        return cmds
+      } catch (err) {
+        logger.warn({ err, cwd }, 'listCommands: supportedCommands failed')
+        return []
+      } finally {
+        // 拿到列表后立即终止 claude 子进程，避免泄漏
+        ac.abort()
+      }
+    })()
+
+    inflightCommands.set(cwd, p)
+    try {
+      return await p
+    } finally {
+      inflightCommands.delete(cwd)
+    }
   },
 }

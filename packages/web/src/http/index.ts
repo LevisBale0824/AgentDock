@@ -33,6 +33,13 @@ export interface FileTreeNode {
   children?: FileTreeNode[]
 }
 
+// 后端 /project/:id/commands 返回的 slash 命令 / skill（与 server providers/types.ts 对齐）
+export interface SlashCommand {
+  name: string
+  description: string
+  argumentHint: string
+}
+
 // 发送给后端的 content block
 export type ContentBlock =
   | { type: 'text'; text: string }
@@ -108,6 +115,13 @@ export const api = {
     fetch(`${BASE}/project/${projectID}/file?path=${encodeURIComponent(filePath)}`).then((r) =>
       r.json()
     ),
+
+  /** 当前项目可用的 slash 命令 / skills（输入框 / 自动补全用） */
+  getProjectCommands: (
+    projectID: string,
+    agent: AgentType = 'claude'
+  ): Promise<{ commands: SlashCommand[] }> =>
+    fetch(`${BASE}/project/${projectID}/commands?agent=${agent}`).then((r) => r.json()),
 
   deleteSession: (id: string): Promise<{ ok: boolean }> =>
     fetch(`${BASE}/session/${id}`, { method: 'DELETE' }).then((r) => r.json()),
