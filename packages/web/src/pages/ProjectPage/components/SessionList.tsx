@@ -19,18 +19,18 @@ function fmtTime(ts: number): string {
 }
 
 const C = {
-  bg0: '#f7f7f8',
-  bg1: '#ffffff',
-  bg3: '#e8e8ec',
-  text0: '#1a1a1a',
-  text1: '#888888',
+  bg0: 'var(--bg)',
+  bg1: 'var(--bg-soft)',
+  bg3: 'var(--line)',
+  text0: 'var(--txt)',
+  text1: 'var(--txt-sub)',
 }
 
 const AGENT_COLOR: Record<string, string> = {
   opencode: 'orange',
   zero: 'purple',
   kilo: 'green',
-  claude: 'blue',
+  claude: 'green',
 }
 
 interface Props {
@@ -63,25 +63,28 @@ export default function SessionList({
       <div style={{ padding: '10px 10px 8px', borderBottom: `1px solid ${C.bg3}`, flexShrink: 0 }}>
         <div style={{ marginBottom: 8, paddingLeft: 2 }}>
           <div
+            className="font-display"
             style={{
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: 600,
               color: C.text0,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              letterSpacing: '-.01em',
             }}
           >
             {projectCwd.split('/').pop()}
           </div>
           <div
+            className="font-mono"
             style={{
               fontSize: 11,
               color: C.text1,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              marginTop: 1,
+              marginTop: 2,
             }}
           >
             ~/{projectCwd.split('/').slice(-2, -1)[0]}
@@ -116,10 +119,10 @@ export default function SessionList({
               style={{
                 cursor: 'pointer',
                 padding: '6px 10px',
-                background: s.id === activeId ? C.bg1 : 'transparent',
+                background: s.id === activeId ? 'var(--acc-soft)' : 'transparent',
                 borderRadius: 6,
                 margin: '1px 6px',
-                boxShadow: s.id === activeId ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                boxShadow: s.id === activeId ? '0 0 0 1px var(--acc-line)' : 'none',
                 transition: 'all 0.1s',
                 border: 'none',
               }}
@@ -167,7 +170,7 @@ export default function SessionList({
                   </Space>
                 }
                 description={
-                  <Text style={{ fontSize: 11, color: C.text1 }}>
+                  <Text className="font-mono" style={{ fontSize: 11, color: C.text1 }}>
                     {fmtTime(s.lastModified)}
                   </Text>
                 }

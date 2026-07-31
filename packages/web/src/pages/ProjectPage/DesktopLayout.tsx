@@ -11,13 +11,13 @@ import RightPanel from './components/RightPanel'
 import type { useProjectPage } from './useProjectPage'
 
 const C = {
-  bg0: '#f7f7f8',
-  bg1: '#ffffff',
-  bg3: '#e8e8ec',
-  text0: '#1a1a1a',
-  text1: '#888888',
-  text2: '#bbb',
-  sidebar: '#efefef',
+  bg0: 'var(--bg)',
+  bg1: 'var(--bg-soft)',
+  bg3: 'var(--line)',
+  text0: 'var(--txt)',
+  text1: 'var(--txt-sub)',
+  text2: 'var(--txt-dim)',
+  sidebar: 'var(--bg-soft)',
 }
 
 type PageState = ReturnType<typeof useProjectPage>
