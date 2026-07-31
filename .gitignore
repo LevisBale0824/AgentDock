@@ -29,3 +29,6 @@ test-pty.html
 test-pty.js
 
 packages/server/public/
+
+# Visual companion mockups (brainstorming)
+.superpowers/
