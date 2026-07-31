@@ -34,7 +34,7 @@ function ProjectCard({ project, onClick }: { project: ProjectInfo; onClick: () =
     <div className="projectCard" onClick={onClick}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div className="projectCard-icon">
-          <FolderOpenOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+          <FolderOpenOutlined style={{ color: 'var(--acc)', fontSize: 16 }} />
         </div>
         <div style={{ overflow: 'hidden', paddingRight: 8 }}>
           <div className="projectCard-name">{name}</div>
@@ -92,14 +92,14 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
             alignItems: 'center',
             gap: 6,
             padding: '6px 10px',
-            background: '#f0f9ff',
-            border: '1px solid #bae0ff',
+            background: 'var(--acc-soft)',
+            border: '1px solid var(--acc-line)',
             borderRadius: 6,
             fontSize: 12,
-            color: '#0958d9',
+            color: 'var(--acc)',
           }}
         >
-          <CheckCircleFilled style={{ color: '#1677ff' }} />
+          <CheckCircleFilled style={{ color: 'var(--acc)' }} />
           <span
             style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
           >
@@ -116,15 +116,15 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
           flexWrap: 'wrap',
           gap: 2,
           padding: '4px 8px',
-          background: '#fafafa',
-          border: '1px solid #e8e8e8',
+          background: 'var(--bg-soft)',
+          border: '1px solid var(--line)',
           borderRadius: 6,
           fontSize: 12,
           minHeight: 32,
         }}
       >
         <span
-          style={{ cursor: 'pointer', color: '#1677ff', padding: '0 2px' }}
+          style={{ cursor: 'pointer', color: 'var(--acc)', padding: '0 2px' }}
           onClick={() => navigate()}
         >
           <HomeOutlined />
@@ -133,11 +133,11 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
           const segPath = '/' + segments.slice(0, i + 1).join('/')
           return (
             <span key={segPath} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <RightOutlined style={{ fontSize: 9, color: '#bbb' }} />
+              <RightOutlined style={{ fontSize: 9, color: 'var(--txt-dim)' }} />
               <span
                 style={{
                   cursor: 'pointer',
-                  color: i === segments.length - 1 ? '#333' : '#1677ff',
+                  color: i === segments.length - 1 ? 'var(--txt)' : 'var(--acc)',
                   padding: '0 2px',
                   fontWeight: i === segments.length - 1 ? 600 : undefined,
                 }}
@@ -153,19 +153,19 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
       {/* 目录列表 */}
       <div
         style={{
-          border: '1px solid #e8e8e8',
+          border: '1px solid var(--line)',
           borderRadius: 6,
           overflow: 'auto',
           maxHeight: 280,
-          background: '#fff',
+          background: 'var(--bg-elev)',
         }}
       >
         {loadingPath !== null ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
-            <LoadingOutlined style={{ color: '#1677ff', fontSize: 20 }} />
+            <LoadingOutlined style={{ color: 'var(--acc)', fontSize: 20 }} />
           </div>
         ) : dirs.length === 0 ? (
-          <div style={{ padding: '20px 0', textAlign: 'center', color: '#bbb', fontSize: 12 }}>
+          <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--txt-dim)', fontSize: 12 }}>
             没有子目录
           </div>
         ) : (
@@ -179,8 +179,8 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
                   alignItems: 'center',
                   padding: '7px 12px',
                   cursor: 'pointer',
-                  background: isSelected ? '#e6f4ff' : undefined,
-                  borderBottom: '1px solid #f5f5f5',
+                  background: isSelected ? 'var(--acc-soft)' : undefined,
+                  borderBottom: '1px solid var(--line-soft)',
                   transition: 'background 0.1s',
                 }}
                 onClick={() => onSelect(dir.path)}
@@ -188,7 +188,7 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
               >
                 <FolderOpenOutlined
                   style={{
-                    color: isSelected ? '#1677ff' : '#faad14',
+                    color: isSelected ? 'var(--acc)' : '#faad14',
                     marginRight: 8,
                     fontSize: 14,
                   }}
@@ -197,7 +197,7 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
                   style={{
                     flex: 1,
                     fontSize: 13,
-                    color: isSelected ? '#1677ff' : '#333',
+                    color: isSelected ? 'var(--acc)' : 'var(--txt)',
                     fontWeight: isSelected ? 600 : undefined,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -207,7 +207,7 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
                   {dir.name}
                 </span>
                 <RightOutlined
-                  style={{ color: '#ccc', fontSize: 11 }}
+                  style={{ color: 'var(--txt-dim)', fontSize: 11 }}
                   onClick={(e) => {
                     e.stopPropagation()
                     navigate(dir.path)
@@ -219,7 +219,7 @@ function DirPicker({ selected, onSelect }: { selected: string; onSelect: (path: 
         )}
       </div>
 
-      <div style={{ fontSize: 11, color: '#aaa' }}>
+      <div style={{ fontSize: 11, color: 'var(--txt-dim)' }}>
         单击选中目录，双击或点击 <RightOutlined style={{ fontSize: 9 }} /> 进入子目录
       </div>
     </div>
@@ -341,8 +341,8 @@ export default function HomePage() {
                   }}
                 >
                   <div style={{ fontSize: 40 }}>📁</div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: '#555' }}>暂无项目</div>
-                  <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt-sub)' }}>暂无项目</div>
+                  <div style={{ fontSize: 12, color: 'var(--txt-dim)', marginBottom: 16 }}>
                     点击下方按钮，选择项目目录即可开始
                   </div>
 
@@ -364,7 +364,7 @@ export default function HomePage() {
                     : projects
                   return filtered.length === 0 ? (
                     <div
-                      style={{ textAlign: 'center', color: '#aaa', paddingTop: 40, fontSize: 13 }}
+                      style={{ textAlign: 'center', color: 'var(--txt-dim)', paddingTop: 40, fontSize: 13 }}
                     >
                       没有匹配的项目
                     </div>

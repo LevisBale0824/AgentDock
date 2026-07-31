@@ -1,6 +1,6 @@
 .homePage {
   height: 100vh;
-  background: #f7f7f8;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -17,19 +17,20 @@
     flex-shrink: 0;
 
     &-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1a1a1a;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--txt);
       letter-spacing: -0.5px;
+      font-family: var(--font-display);
     }
 
     &-subtitle {
       font-size: 12px;
-      color: #999;
+      color: var(--txt-sub);
       margin-top: 3px;
 
       code {
-        background: #eee;
+        background: var(--glass-2);
         padding: 1px 5px;
         border-radius: 3px;
         font-size: 11px;
@@ -38,7 +39,7 @@
 
     &-divider {
       height: 1px;
-      background: #e8e8ec;
+      background: var(--line);
       margin-top: 20px;
     }
   }
@@ -51,7 +52,7 @@
 
   &-divider {
     height: 1px;
-    background: #e8e8ec;
+    background: var(--line);
     flex-shrink: 0;
   }
 
@@ -63,21 +64,23 @@
 }
 
 .projectCard {
-  background: #fff;
-  border: 1px solid #e8e8ec;
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 14px 16px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform .3s ease, border-color .15s, box-shadow .15s;
   display: flex;
   flex-direction: column;
   gap: 8px;
   position: relative;
 
   &:hover {
-    border-color: #1677ff;
-    box-shadow: 0 4px 16px rgba(22, 119, 255, 0.1);
-    transform: translateY(-1px);
+    border-color: var(--acc-line);
+    box-shadow: 0 20px 50px rgba(0,0,0,.45);
+    transform: translateY(-3px) perspective(1400px) rotateY(-3deg);
 
     .projectCard-delete {
       opacity: 1;
@@ -94,7 +97,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ccc;
+    color: var(--txt-dim);
     font-size: 12px;
     opacity: 0;
     transition: opacity 0.15s;
@@ -104,7 +107,7 @@
     width: 34px;
     height: 34px;
     border-radius: 8px;
-    background: #f0f5ff;
+    background: var(--acc-soft);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -114,7 +117,7 @@
   &-name {
     font-weight: 600;
     font-size: 13.5px;
-    color: #1a1a1a;
+    color: var(--txt);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -122,11 +125,11 @@
 
   &-path {
     font-size: 11px;
-    color: #aaa;
+    color: var(--txt-dim);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: monospace;
+    font-family: var(--font-mono);
   }
 
   &-meta {
@@ -135,11 +138,11 @@
     gap: 12px;
     margin-top: 2px;
     font-size: 11px;
-    color: #999;
+    color: var(--txt-sub);
   }
 
   &-time {
     margin-left: auto;
-    color: #bbb;
+    color: var(--txt-dim);
   }
 }
