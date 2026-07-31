@@ -4,6 +4,7 @@ export interface ProjectInfo {
   cwd: string
   sessionCount: number
   updatedAt: number
+  agents: AgentType[]
 }
 
 export type AgentType = 'claude' | 'opencode' | 'zero' | 'kilo'
@@ -38,6 +39,14 @@ export interface SlashCommand {
   name: string
   description: string
   argumentHint: string
+}
+
+// 可用模型（opencode 等后端经 /agents/:type/models 返回）
+export interface AvailableModel {
+  id: string
+  name: string
+  providerId: string
+  providerName: string
 }
 
 // 发送给后端的 content block
@@ -87,6 +96,10 @@ export interface CanonicalMessage {
 export const api = {
   listAgents: (): Promise<ProviderInfo[]> => fetch(`${BASE}/agents`).then((r) => r.json()),
 
+  /** 列出某 agent 后端可用的模型（opencode 等） */
+  getModels: (agent: AgentType): Promise<{ models: AvailableModel[] }> =>
+    fetch(`${BASE}/agents/${agent}/models`).then((r) => r.json()),
+
   listProjects: (): Promise<ProjectInfo[]> => fetch(`${BASE}/project`).then((r) => r.json()),
 
   linkProject: (
@@ -104,11 +117,11 @@ export const api = {
     ),
 
   listProjectSessions: (projectID: string): Promise<SessionSummary[]> =>
-    fetch(`${BASE}/project/${projectID}/session`).then((r) => r.json()),
+    fetch(`${BASE}/project/${projectID}/session`).then((r) => (r.ok ? r.json() : [])),
 
   getFileTree: (projectID: string, path = '/'): Promise<FileTreeNode[]> =>
     fetch(`${BASE}/project/${projectID}/tree?path=${encodeURIComponent(path)}`).then((r) =>
-      r.json()
+      r.ok ? r.json() : []
     ),
 
   getFile: (projectID: string, filePath: string): Promise<{ path: string; content: string }> =>
@@ -147,6 +160,9 @@ export const api = {
     bypassPermissions: boolean,
     cwd: string | undefined,
     agent: AgentType | undefined,
+    options:
+      | { opencodeModel?: { providerID: string; modelID: string } }
+      | undefined,
     callbacks: {
       onMessage: (msg: CanonicalMessage) => void
       onDone: (done: SseDone) => void
@@ -162,6 +178,7 @@ export const api = {
         bypassPermissions,
         ...(cwd ? { cwd } : {}),
         ...(agent ? { agent } : {}),
+        ...(options ? { options } : {}),
       }),
     }).then(async (r) => {
       if (!r.ok) {

@@ -101,6 +101,34 @@
     transition: opacity 0.15s;
   }
 
+  &-badges {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 1;
+    pointer-events: none;
+
+    .agent-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+      letter-spacing: 0.02em;
+    }
+    .agent-badge.is-claude {
+      color: var(--acc);
+      background: var(--acc-soft);
+      border: 1px solid var(--acc-line);
+    }
+    .agent-badge.is-opencode {
+      color: var(--warn);
+      background: rgba(255, 138, 61, 0.12);
+      border: 1px solid rgba(255, 138, 61, 0.35);
+    }
+  }
+
   &-icon {
     width: 34px;
     height: 34px;

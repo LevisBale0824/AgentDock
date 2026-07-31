@@ -11,6 +11,7 @@ import {
   type AskUserQuestion,
   type ProviderInfo,
   type AgentType,
+  type AvailableModel,
 } from '@/http/index'
 import type { Attachment } from '@/components/ChatInput/index.tsx'
 import { type DisplayMessage } from '@/components/MessageBubble/index.tsx'
@@ -50,7 +51,14 @@ export function useProjectPage() {
   const [treeSearch, setTreeSearch] = useState('')
   const [bypassPermissions, setBypassPermissions] = useState(true)
   const [agents, setAgents] = useState<ProviderInfo[]>([])
-  const [selectedAgent, setSelectedAgent] = useState<AgentType>('claude')
+  const [selectedAgent, setSelectedAgent] = useState<AgentType>(
+    () => (localStorage.getItem('agentdock:selectedAgent') as AgentType) || 'claude'
+  )
+  const [opencodeModels, setOpencodeModels] = useState<AvailableModel[]>([])
+  const [selectedOpencodeModel, setSelectedOpencodeModel] = useState<{
+    providerID: string
+    modelID: string
+  } | null>(null)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<'chat' | 'review'>('chat')
   const [pendingQuestion, setPendingQuestion] = useState<{
@@ -274,6 +282,9 @@ export function useProjectPage() {
         bypassPermissions,
         cwd,
         isNew ? selectedAgent : undefined,
+        selectedAgent === 'opencode' && selectedOpencodeModel
+          ? { opencodeModel: selectedOpencodeModel }
+          : undefined,
         {
         onAskUser: (questions) => {
           setPendingQuestion({ sessionId: pendingNewCwd.current ? '' : sessionId, questions })
@@ -346,6 +357,18 @@ export function useProjectPage() {
     api.listAgents().then(setAgents).catch(() => {})
   }, [])
 
+  // opencode 时拉取可用 model 列表（用于会话内选模型）
+  useEffect(() => {
+    if (selectedAgent !== 'opencode') {
+      setOpencodeModels([])
+      return
+    }
+    api
+      .getModels('opencode')
+      .then(({ models }) => setOpencodeModels(models))
+      .catch(() => setOpencodeModels([]))
+  }, [selectedAgent])
+
   useEffect(() => {
     if (!projectId) return
     setPreLoading(true)
@@ -383,9 +406,9 @@ export function useProjectPage() {
   }, [messages])
 
   // 按当前选中的 agent 过滤会话列表：切换 agent 时只显示对应的会话
-  const sessionsView = sessions.filter(
-    (s) => s.agent === selectedAgent || s.id === NEW_SESSION_ID
-  )
+  // 历史会话属于哪个 agent 是既定事实，都该可见；按 selectedAgent 过滤会导致
+  // 切错 agent 时看不到另一边的会话。归属用 SessionList 里的 agent 标签区分。
+  const sessionsView = sessions
 
   return {
     projectId,
@@ -415,6 +438,9 @@ export function useProjectPage() {
     agents,
     selectedAgent,
     setSelectedAgent,
+    opencodeModels,
+    selectedOpencodeModel,
+    setSelectedOpencodeModel,
     mobileDrawerOpen,
     setMobileDrawerOpen,
     mobileTab,

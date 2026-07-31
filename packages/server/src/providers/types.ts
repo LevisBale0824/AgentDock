@@ -91,6 +91,8 @@ export interface AgentOptions {
   additionalDirectories?: string[]
   env?: Record<string, string>
   thinking?: { type: 'enabled'; budget_tokens: number }
+  /** opencode 运行时模型（覆盖 provider 默认）；claude 用上面的 model 字符串 */
+  opencodeModel?: { providerID: string; modelID: string }
 }
 
 // ── Slash 命令 / Skill（与 SDK 的 SlashCommand 对齐）─────────────────────────
@@ -104,7 +106,15 @@ export interface SlashCommand {
   argumentHint: string
 }
 
-// ── 运行请求 ─────────────────────────────────────────────────────────────────
+// ── 可用模型（opencode 等后端的 model 列表，供会话内选择）───────────────────
+export interface AvailableModel {
+  id: string
+  name: string
+  providerId: string
+  providerName: string
+}
+
+// ── 运行请求 ─────────────────────────────────────────────────────────
 export interface RunRequest {
   cwd: string
   /** null 表示新建会话；首条消息后由 session_assigned 事件给出真实 id */
@@ -159,4 +169,8 @@ export interface AgentProvider {
   // ── 发现 ──
   /** 列出当前 cwd 下可用的 slash 命令 / skills（可选；未实现则前端走兜底） */
   listCommands?(cwd: string): Promise<SlashCommand[]>
+  /** 列出该后端可用的模型（可选；用于会话内选模型） */
+  listModels?(): Promise<AvailableModel[]>
+  /** 列出该后端的项目（合并到主页项目列表；claude 走 ~/.claude/projects 扫描，不实现） */
+  listProjects?(): Promise<{ cwd: string; sessionCount: number; updatedAt: number }[]>
 }

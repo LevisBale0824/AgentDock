@@ -10,7 +10,7 @@ import { projectRoutes } from './routes/project'
 import { sessionRoutes } from './routes/session'
 import { terminalRoutes } from './routes/terminal'
 import { initProviders } from './providers/init'
-import { listProviderInfos } from './providers/registry'
+import { listProviderInfos, getProvider } from './providers/registry'
 import fs from 'fs'
 import path from 'path'
 import { exec } from 'child_process'
@@ -80,6 +80,14 @@ export async function startServer(opts: ServerOptions = {}): Promise<void> {
     async (api) => {
       api.get('/health', async () => ({ healthy: true, version: '0.1.0' }))
       api.get('/agents', async () => listProviderInfos())
+      api.get('/agents/:type/models', async (req: any) => {
+        const { type } = req.params as { type: string }
+        try {
+          return { models: (await getProvider(type as any).listModels?.()) ?? [] }
+        } catch {
+          return { models: [] }
+        }
+      })
       await projectRoutes(api)
       await sessionRoutes(api)
       await terminalRoutes(api)

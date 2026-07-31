@@ -112,9 +112,6 @@ export default function DesktopLayout(p: Props) {
                     onSelect={p.selectSession}
                     onNew={p.startNewSession}
                     onDelete={p.deleteSession}
-                    agents={p.agents}
-                    selectedAgent={p.selectedAgent}
-                    onSelectAgent={p.setSelectedAgent}
                   />
                 </Splitter.Panel>
 
@@ -145,6 +142,10 @@ export default function DesktopLayout(p: Props) {
                     onResolve={p.handleResolve}
                     bypassPermissions={p.bypassPermissions}
                     onBypassPermissionsChange={p.setBypassPermissions}
+                    agent={p.selectedAgent}
+                    models={p.opencodeModels}
+                    selectedModel={p.selectedOpencodeModel}
+                    onSelectModel={p.setSelectedOpencodeModel}
                   />
                 </Splitter.Panel>
 

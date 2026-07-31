@@ -13,6 +13,7 @@ import type {
   RunRequest,
   RunResult,
   TokenUsage,
+  AvailableModel,
 } from './types'
 
 export interface OpenCodeProviderConfig {
@@ -176,11 +177,62 @@ export function createOpenCodeProvider(config: OpenCodeProviderConfig): AgentPro
       }
     },
 
-    async listSessions(_cwd) {
+    async listSessions(cwd) {
       try {
-        const res = await client.session.list({} as any)  // 不按目录过滤，前端会按 project.id 分组
+        // 必须传 directory：opencode 的 session.list 默认只返回"服务启动目录所属项目"
+        // 的会话，不传则其他项目的历史会话一条都拿不到
+        const res = await client.session.list({ query: { directory: cwd } } as any)
         const sessions = ((res as any).data ?? res) as any[]
-        return sessions.map((s) => toCanonicalSession(s, config.type))
+        const norm = (p?: string) => (p ?? '').replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase().replace(/^\/([a-z])\//i, '$1:/')
+        const target = norm(cwd)
+        // 按 directory 归属到对应项目（opencode 一个 session 属于它创建时的工作目录）
+        return sessions
+          .filter((s) => norm(s.directory) === target)
+          .map((s) => toCanonicalSession(s, config.type))
+      } catch {
+        return []
+      }
+    },
+
+    async listProjects() {
+      try {
+        const projRes = await (client as any).project.list()
+        const projects = ((projRes as any).data ?? projRes) as any[]
+        const norm = (p?: string) => (p ?? '').replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase().replace(/^\/([a-z])\//i, '$1:/')
+        // 单个 session.list 默认只返回"服务启动目录所属项目"的会话；
+        // 要统计每个项目的历史会话数，只能按 worktree 逐项目查询
+        const perDir = await Promise.all(
+          projects
+            .filter((p) => p.worktree)
+            .map(async (p) => {
+              try {
+                const res = await client.session.list({ query: { directory: p.worktree } } as any)
+                const sessions = ((res as any).data ?? res) as any[]
+                let sessionCount = 0
+                let updatedAt = 0
+                for (const s of sessions) {
+                  sessionCount++
+                  const t = s.time?.updated ?? s.time?.created ?? 0
+                  if (t > updatedAt) updatedAt = t
+                }
+                return { cwd: p.worktree, sessionCount, updatedAt }
+              } catch {
+                return { cwd: p.worktree, sessionCount: 0, updatedAt: 0 }
+              }
+            })
+        )
+        const byDir = new Map(perDir.map((r) => [norm(r.cwd), r]))
+        return projects
+          .filter((p) => p.worktree)
+          .map((p) => {
+            const key = norm(p.worktree)
+            const r = byDir.get(key)
+            return {
+              cwd: p.worktree,
+              sessionCount: r?.sessionCount ?? 0,
+              updatedAt: r?.updatedAt ?? p.time?.initialized ?? p.time?.created ?? 0,
+            }
+          })
       } catch {
         return []
       }
@@ -259,13 +311,14 @@ export function createOpenCodeProvider(config: OpenCodeProviderConfig): AgentPro
           ? { type: 'file', url: `data:${b.media_type};base64,${b.data}`, mime: b.media_type }
           : { type: 'text', text: b.text }
       )
+      const runtimeModel = req.options?.opencodeModel ?? config.model
 
       await client.session.promptAsync({
         path: { id: sessionId },
         body: {
           parts: ocParts,
           agent: config.agent ?? 'general',
-          ...(config.model ? { model: config.model } : {}),
+          ...(runtimeModel ? { model: runtimeModel } : {}),
         },
       } as any)
 
@@ -323,6 +376,15 @@ export function createOpenCodeProvider(config: OpenCodeProviderConfig): AgentPro
             continue
           }
 
+          if (t === 'session.error') {
+            const e = ev.properties?.error
+            const errMsg =
+              (e?.data?.message ?? e?.message ?? e?.name) || 'opencode session error'
+            logger.error({ sid: ev.properties?.sessionID, err: errMsg, props: ev.properties }, '[opencode] session.error')
+            yield { type: 'error', message: String(errMsg) }
+            break
+          }
+
           if (
             t === 'session.idle' ||
             (t === 'session.status' && ev.properties?.status?.type === 'idle')
@@ -370,6 +432,32 @@ export function createOpenCodeProvider(config: OpenCodeProviderConfig): AgentPro
         })
         .catch(() => {})
       return true
+    },
+
+    // ── 发现：列出可用模型（仅 connected provider 的）──
+    async listModels(): Promise<AvailableModel[]> {
+      try {
+        const res = await client.provider.list()
+        const data = ((res as any).data ?? res) as { all?: any[]; connected?: string[] }
+        const connected = new Set(data.connected ?? [])
+        const out: AvailableModel[] = []
+        for (const p of data.all ?? []) {
+          if (!connected.has(p.id)) continue
+          const models = p.models ?? {}
+          for (const modelId of Object.keys(models)) {
+            const m = models[modelId]
+            out.push({
+              id: m?.id ?? modelId,
+              name: m?.name ?? modelId,
+              providerId: p.id,
+              providerName: p.name ?? p.id,
+            })
+          }
+        }
+        return out
+      } catch {
+        return []
+      }
     },
   }
 

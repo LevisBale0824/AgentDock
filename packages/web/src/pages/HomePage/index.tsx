@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Spin, App as AntdApp, Tooltip, Modal, Button, Input } from 'antd'
+import { Spin, App as AntdApp, Tooltip, Modal, Button, Input, Select } from 'antd'
 import {
   FolderOpenOutlined,
   BranchesOutlined,
@@ -10,7 +10,7 @@ import {
   HomeOutlined,
   CheckCircleFilled,
 } from '@ant-design/icons'
-import { api, type ProjectInfo } from '@/http/index'
+import { api, type ProjectInfo, type AgentType, type ProviderInfo } from '@/http/index'
 import TerminalPanel from '@/components/Terminal/index.tsx'
 import FullSpin from '@/components/FullSpin'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -32,6 +32,14 @@ function ProjectCard({ project, onClick }: { project: ProjectInfo; onClick: () =
 
   return (
     <div className="projectCard" onClick={onClick}>
+      <div className="projectCard-badges">
+        {project.agents?.includes('claude') && (
+          <span className="agent-badge is-claude">Claude</span>
+        )}
+        {project.agents?.includes('opencode') && (
+          <span className="agent-badge is-opencode">OpenCode</span>
+        )}
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div className="projectCard-icon">
           <FolderOpenOutlined style={{ color: 'var(--acc)', fontSize: 16 }} />
@@ -231,6 +239,10 @@ export default function HomePage() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const [projects, setProjects] = useState<ProjectInfo[]>([])
+  const [agents, setAgents] = useState<ProviderInfo[]>([])
+  const [selectedAgent, setSelectedAgent] = useState<AgentType>(
+    () => (localStorage.getItem('agentdock:selectedAgent') as AgentType) || 'claude'
+  )
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedCwd, setSelectedCwd] = useState('')
@@ -249,6 +261,10 @@ export default function HomePage() {
 
   useEffect(() => {
     load(true)
+  }, [])
+
+  useEffect(() => {
+    api.listAgents().then(setAgents).catch(() => {})
   }, [])
 
   function openModal() {
@@ -302,16 +318,29 @@ export default function HomePage() {
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               >
                 <div className="homePage-header-subtitle">
-                  当前有 {projects?.length} 个 Claude 项目
+                  当前有 {projects?.length} 个项目
                 </div>
-                <Button
-                  color="primary"
-                  variant="filled"
-                  icon={<PlusOutlined />}
-                  onClick={openModal}
-                >
-                  添加项目
-                </Button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {agents.length > 1 && (
+                    <Select
+                      value={selectedAgent}
+                      onChange={(v) => {
+                        setSelectedAgent(v)
+                        localStorage.setItem('agentdock:selectedAgent', v)
+                      }}
+                      options={agents.map((a) => ({ value: a.type, label: a.label }))}
+                      style={{ width: 150 }}
+                    />
+                  )}
+                  <Button
+                    color="primary"
+                    variant="filled"
+                    icon={<PlusOutlined />}
+                    onClick={openModal}
+                  >
+                    添加项目
+                  </Button>
+                </div>
               </div>
               {projects.length > 0 && (
                 <Input.Search

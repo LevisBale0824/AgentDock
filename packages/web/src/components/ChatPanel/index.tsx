@@ -11,9 +11,10 @@ import {
   Tooltip,
   Input,
   Popover,
+  Select,
 } from 'antd'
 import { ArrowUpOutlined, XFilled } from '@ant-design/icons'
-import type { AskUserQuestion } from '@/http/index'
+import type { AskUserQuestion, AvailableModel, AgentType } from '@/http/index'
 import type { Attachment } from '@/components/ChatInput/index.tsx'
 import type { DisplayMessage } from '@/components/MessageBubble/index.tsx'
 import ChatInput from '@/components/ChatInput/index.tsx'
@@ -263,6 +264,10 @@ interface ChatPanelProps {
   ) => void
   bypassPermissions: boolean
   onBypassPermissionsChange: (v: boolean) => void
+  agent: AgentType
+  models: AvailableModel[]
+  selectedModel: { providerID: string; modelID: string } | null
+  onSelectModel: (m: { providerID: string; modelID: string } | null) => void
 }
 
 export default function ChatPanel({
@@ -281,6 +286,10 @@ export default function ChatPanel({
   onResolve,
   bypassPermissions,
   onBypassPermissionsChange,
+  agent,
+  models,
+  selectedModel,
+  onSelectModel,
 }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -408,6 +417,30 @@ export default function ChatPanel({
                 />
               </Space>
             </Tooltip>
+
+            {agent === 'opencode' && models.length > 0 && (
+              <Select
+                size="small"
+                variant="borderless"
+                showSearch
+                optionFilterProp="label"
+                placeholder="默认模型"
+                style={{ width: 150 }}
+                value={
+                  selectedModel
+                    ? `${selectedModel.providerID}/${selectedModel.modelID}`
+                    : undefined
+                }
+                onChange={(v) => {
+                  const m = models.find((x) => `${x.providerId}/${x.id}` === v)
+                  onSelectModel(m ? { providerID: m.providerId, modelID: m.id } : null)
+                }}
+                options={models.map((m) => ({
+                  value: `${m.providerId}/${m.id}`,
+                  label: m.name,
+                }))}
+              />
+            )}
 
             {loading ? (
               <Button color="primary" variant="filled" icon={<XFilled />} onClick={onAbort} />

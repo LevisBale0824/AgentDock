@@ -1,6 +1,6 @@
-import { List, Button, Typography, Space, Tag, Popconfirm, Select } from 'antd'
+import { List, Button, Typography, Space, Tag, Popconfirm } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { SessionSummary, ProviderInfo, AgentType } from '@/http/index'
+import type { SessionSummary } from '@/http/index'
 import { NEW_SESSION_ID } from '../useProjectPage'
 
 const { Text } = Typography
@@ -40,9 +40,6 @@ interface Props {
   onSelect: (id: string) => void
   onNew: () => void
   onDelete: (id: string) => void
-  agents: ProviderInfo[]
-  selectedAgent: AgentType
-  onSelectAgent: (a: AgentType) => void
 }
 
 export default function SessionList({
@@ -52,12 +49,7 @@ export default function SessionList({
   onSelect,
   onNew,
   onDelete,
-  agents,
-  selectedAgent,
-  onSelectAgent,
 }: Props) {
-  const showAgentSwitch = agents.length > 1
-
   return (
     <>
       <div style={{ padding: '10px 10px 8px', borderBottom: `1px solid ${C.bg3}`, flexShrink: 0 }}>
@@ -99,15 +91,6 @@ export default function SessionList({
         >
           新建会话
         </Button>
-        {showAgentSwitch && (
-          <Select
-            size="small"
-            value={selectedAgent}
-            onChange={(v) => onSelectAgent(v)}
-            options={agents.map((a) => ({ value: a.type, label: a.label }))}
-            style={{ width: '100%', marginTop: 6 }}
-          />
-        )}
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
@@ -151,7 +134,7 @@ export default function SessionList({
                     >
                       {s.title}
                     </Text>
-                    {showAgentSwitch && s.agent && (
+                    {s.agent && s.agent !== 'claude' && (
                       <Tag
                         color={AGENT_COLOR[s.agent] ?? 'default'}
                         style={{ fontSize: 10, padding: '0 3px', lineHeight: '15px' }}

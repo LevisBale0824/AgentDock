@@ -12,6 +12,8 @@ interface AgentEntry {
   cmdEnv: string
   portEnv: string
   defaultCmd: string
+  /** 默认是否启动该 provider（无须显式 ENABLED=true；可用 ENABLED=false 关闭） */
+  defaultEnabled?: boolean
   agent?: string
   /** 默认 AI 模型（格式 providerID/modelID），可在环境变量 OPENCODE_MODEL_ID 中覆盖 */
   modelID?: string
@@ -26,7 +28,9 @@ const ENTRIES: AgentEntry[] = [
     cmdEnv: 'OPENCODE_CMD',
     portEnv: 'OPENCODE_PORT',
     defaultCmd: 'opencode',
-    modelID: 'deepseek/deepseek-chat',  // 可用环境变量 OPENCODE_MODEL_ID 覆盖
+    defaultEnabled: true,
+    // 默认不指定 model：使用 opencode 自己 account 的默认模型；可用环境变量
+    // OPENCODE_MODEL_ID=providerID/modelID 覆盖
   },
   {
     type: 'zero',
@@ -50,7 +54,9 @@ const ENTRIES: AgentEntry[] = [
 
 export async function initProviders(): Promise<void> {
   for (const entry of ENTRIES) {
-    const enabled = process.env[entry.enabledEnv] === 'true'
+    const enabled =
+      process.env[entry.enabledEnv] === 'true' ||
+      (entry.defaultEnabled === true && process.env[entry.enabledEnv] !== 'false')
     const externalUrl = process.env[entry.baseUrlEnv]
     if (!enabled && !externalUrl) continue
 

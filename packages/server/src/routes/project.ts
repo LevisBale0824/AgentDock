@@ -17,6 +17,18 @@ function normalizePath(p: string): string {
 }
 
 /**
+ * 项目去重比较：在 normalizePath 基础上去掉盘符前缀，
+ * 容忍 claude dirNameToCwd 反推时缺盘符（\code\xxx）vs opencode 全路径（D:\code\xxx）。
+ */
+function normDir(p: string): string {
+  return normalizePath(p).replace(/^[a-z]:/i, '')
+}
+
+// dirName → cwd 缓存：listProjects 合并时填充（含 opencode-only 等无 .jsonl 的项目），
+// 供 /project/:id/* 路由的 dirNameToCwd 兜底反推，避免 404
+const dirToCwdCache = new Map<string, string>()
+
+/**
  * 安全检查：absPath 是否在 cwd 目录内（跨平台）
  */
 function isPathInside(absPath: string, cwd: string): boolean {
@@ -48,9 +60,12 @@ function dirNameToCwd(dirName: string): string {
     return null
   }
 
-  // Unix: 从根 / 开始搜索
-  const unixResult = tryResolve(0, '/')
-  if (unixResult) return unixResult
+  // Unix: 从根 / 开始搜索（Windows 跳过：'/' 会被解析为当前盘根，
+  // 导致 D:-code-x 这种缺盘符段误匹配出没有盘符的 \code\x 路径）
+  if (process.platform !== 'win32') {
+    const unixResult = tryResolve(0, '/')
+    if (unixResult) return unixResult
+  }
 
   // Windows: 尝试常见盘符 C: D: E:
   for (const drive of ['C', 'D', 'E', 'F']) {
@@ -72,6 +87,9 @@ function dirNameToCwd(dirName: string): string {
     }
   } catch {}
 
+  // 缓存兜底：opencode-only 等无 .jsonl 的项目，dirName 来自 listProjects 合并
+  if (dirToCwdCache.has(dirName)) return dirToCwdCache.get(dirName)!
+
   // 最终降级：用正斜杠拼出 Unix 风格路径
   return '/' + parts.join('/')
 }
@@ -81,6 +99,8 @@ export interface ProjectInfo {
   cwd: string // 实际路径，如 /Users/daiwenqi/code/claude-code-web
   sessionCount: number
   updatedAt: number
+  /** 该 cwd 有哪些后端的会话（claude / opencode …），用于主页卡片角标 */
+  agents: AgentType[]
 }
 
 /** 扫描 ~/.claude/projects，列出所有有 .jsonl 文件的项目 */
@@ -128,7 +148,31 @@ async function listProjects(): Promise<ProjectInfo[]> {
       } catch {}
     }
 
-    projects.push({ id: dirName, cwd, sessionCount: files.length, updatedAt })
+    dirToCwdCache.set(dirName, cwd)
+    projects.push({ id: dirName, cwd, sessionCount: files.length, updatedAt, agents: ['claude'] })
+  }
+
+  // 合并非 claude 后端（opencode 等）的项目：同 cwd 合并归属 + 会话数，新 cwd 才新增
+  for (const info of listProviderInfos()) {
+    if (info.type === 'claude') continue
+    try {
+      const extra = (await getProvider(info.type).listProjects?.()) ?? []
+      for (const p of extra) {
+        if (!fs.existsSync(p.cwd)) continue  // opencode worktree 已不存在的不显示
+        const existing = projects.find((pr) => normDir(pr.cwd) === normDir(p.cwd))
+        if (existing) {
+          if (!existing.agents.includes(info.type)) existing.agents.push(info.type)
+          existing.sessionCount += p.sessionCount
+          if (p.updatedAt > existing.updatedAt) existing.updatedAt = p.updatedAt
+        } else {
+          const dirName = p.cwd.replace(/[/\\]+/g, '-').replace(/-$/, '') || '-'
+          dirToCwdCache.set(dirName, p.cwd)
+          projects.push({ id: dirName, cwd: p.cwd, sessionCount: p.sessionCount, updatedAt: p.updatedAt, agents: [info.type] })
+        }
+      }
+    } catch {
+      /* provider 不支持 listProjects 或失败，跳过 */
+    }
   }
 
   return projects.sort((a, b) => b.updatedAt - a.updatedAt)
@@ -184,10 +228,8 @@ export async function projectRoutes(api: FastifyInstance) {
   // ── Project sessions ────────────────────────────────────
   api.get('/project/:id/session', async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string }
-    const dirPath = path.join(CLAUDE_PROJECTS_DIR, id)
-    if (!fs.existsSync(dirPath)) return reply.code(404).send({ error: 'Project not found' })
-
     const cwd = dirNameToCwd(id)
+    if (!fs.existsSync(cwd)) return reply.code(404).send({ error: 'Project not found' })
 
     // 从所有已注册 provider 拉取会话（不限于 claude），前端据此显示会话列表
     const all: any[] = []
@@ -223,14 +265,16 @@ export async function projectRoutes(api: FastifyInstance) {
   api.get('/project/:id/tree', async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string }
     const cwd = dirNameToCwd(id)
-    logger.debug({ id, cwd, exists: fs.existsSync(cwd) }, 'tree request')
     if (!fs.existsSync(cwd)) return reply.code(404).send({ error: 'Project not found' })
 
     const q = req.query as { path?: string }
     const relPath = q.path ?? '/'
     const absPath = path.resolve(cwd, relPath.replace(/^[/\\]/, ''))
 
-    if (!isPathInside(absPath, cwd)) return reply.code(403).send({ error: 'Forbidden' })
+    if (!isPathInside(absPath, cwd)) {
+      logger.warn({ id, cwd, absPath, a: normalizePath(absPath), b: normalizePath(cwd) }, 'tree 403 debug')
+      return reply.code(403).send({ error: 'Forbidden' })
+    }
     if (!fs.existsSync(absPath)) return reply.code(404).send({ error: 'Path not found' })
 
     const IGNORE = new Set(['.git', 'node_modules', '.next', 'dist', '.cache', '.DS_Store'])
