@@ -33,8 +33,8 @@ function DiffLines({ diff }: { diff: FileDiff }) {
           style={{
             display: 'flex',
             background:
-              line.type === 'added' ? '#f6ffed' : line.type === 'removed' ? '#fff2f0' : undefined,
-            borderLeft: `2px solid ${line.type === 'added' ? '#b7eb8f' : line.type === 'removed' ? '#ffa39e' : 'transparent'}`,
+              line.type === 'added' ? 'rgba(0,255,163,.10)' : line.type === 'removed' ? 'rgba(255,92,92,.10)' : undefined,
+            borderLeft: `2px solid ${line.type === 'added' ? 'var(--acc)' : line.type === 'removed' ? 'var(--danger)' : 'transparent'}`,
           }}
         >
           <span
@@ -42,7 +42,7 @@ function DiffLines({ diff }: { diff: FileDiff }) {
               width: 20,
               textAlign: 'center',
               flexShrink: 0,
-              color: '#bbb',
+              color: 'var(--txt-dim)',
               userSelect: 'none',
             }}
           >
@@ -53,7 +53,7 @@ function DiffLines({ diff }: { diff: FileDiff }) {
               padding: '0 8px',
               whiteSpace: 'pre',
               color:
-                line.type === 'added' ? '#389e0d' : line.type === 'removed' ? '#cf1322' : '#333',
+                line.type === 'added' ? 'var(--acc)' : line.type === 'removed' ? 'var(--danger)' : 'var(--txt)',
             }}
           >
             {line.content}
@@ -66,7 +66,7 @@ function DiffLines({ diff }: { diff: FileDiff }) {
 
 function CollapseLabel({ diff }: { diff: FileDiff }) {
   const statusColor =
-    diff.status === 'added' ? '#389e0d' : diff.status === 'deleted' ? '#cf1322' : '#888'
+    diff.status === 'added' ? 'var(--acc)' : diff.status === 'deleted' ? 'var(--danger)' : 'var(--txt-sub)'
   const statusLabel = diff.status === 'added' ? 'A' : diff.status === 'deleted' ? 'D' : 'M'
   const fileName = diff.file.split('/').pop() ?? diff.file
 
@@ -88,7 +88,7 @@ function CollapseLabel({ diff }: { diff: FileDiff }) {
       <span
         style={{
           fontSize: 12,
-          color: '#1a1a1a',
+          color: 'var(--txt)',
           fontFamily: 'monospace',
           flex: 1,
           overflow: 'hidden',
@@ -100,11 +100,11 @@ function CollapseLabel({ diff }: { diff: FileDiff }) {
       >
         {fileName}
         {diff.file !== fileName && (
-          <span style={{ color: '#bbb', marginLeft: 6, fontSize: 11 }}>{diff.file}</span>
+          <span style={{ color: 'var(--txt-dim)', marginLeft: 6, fontSize: 11 }}>{diff.file}</span>
         )}
       </span>
-      <span style={{ fontSize: 11, color: '#389e0d', flexShrink: 0 }}>+{diff.additions}</span>
-      <span style={{ fontSize: 11, color: '#cf1322', flexShrink: 0, marginLeft: 4 }}>
+      <span style={{ fontSize: 11, color: 'var(--acc)', flexShrink: 0 }}>+{diff.additions}</span>
+      <span style={{ fontSize: 11, color: 'var(--danger)', flexShrink: 0, marginLeft: 4 }}>
         -{diff.deletions}
       </span>
     </div>
@@ -114,7 +114,7 @@ function CollapseLabel({ diff }: { diff: FileDiff }) {
 export default function DiffReview({ diffs }: { diffs: FileDiff[] }) {
   if (diffs.length === 0) {
     return (
-      <div style={{ color: '#bbb', fontSize: 12, textAlign: 'center', marginTop: 60 }}>
+      <div style={{ color: 'var(--txt-dim)', fontSize: 12, textAlign: 'center', marginTop: 60 }}>
         暂无文件变更
       </div>
     )
@@ -131,7 +131,7 @@ export default function DiffReview({ diffs }: { diffs: FileDiff[] }) {
       <Collapse
         items={items}
         size="small"
-        style={{ borderRadius: 0, border: 'none', borderBottom: '1px solid #e8e8ec' }}
+        style={{ borderRadius: 0, border: 'none', borderBottom: '1px solid var(--line)' }}
         expandIconPosition="end"
       />
     </div>

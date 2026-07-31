@@ -24,29 +24,29 @@ export default function TerminalPanel({ cwd, onClose, welcomeMessage }: Props) {
     const term = new Terminal({
       cursorBlink: true,
       fontSize: 13,
-      fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", Menlo, monospace',
+      fontFamily: '"JetBrains Mono Variable", "JetBrains Mono", "Cascadia Code", "Fira Code", Menlo, monospace',
       theme: {
-        background: '#ffffff',
-        foreground: '#383a42',
-        cursor: '#526fff',
-        cursorAccent: '#ffffff',
-        selectionBackground: 'rgba(0,0,0,0.12)',
-        black: '#383a42',
-        red: '#e45649',
-        green: '#50a14f',
-        yellow: '#c18401',
-        blue: '#4078f2',
-        magenta: '#a626a4',
-        cyan: '#0184bc',
-        white: '#fafafa',
-        brightBlack: '#4f525e',
-        brightRed: '#e45649',
-        brightGreen: '#50a14f',
-        brightYellow: '#c18401',
-        brightBlue: '#4078f2',
-        brightMagenta: '#a626a4',
-        brightCyan: '#0184bc',
-        brightWhite: '#ffffff',
+        background: '#08090D',
+        foreground: '#E8EBF1',
+        cursor: '#00FFA3',
+        cursorAccent: '#08090D',
+        selectionBackground: 'rgba(0,255,163,.2)',
+        black: '#08090D',
+        red: '#FF5C5C',
+        green: '#00FFA3',
+        yellow: '#FF8A3D',
+        blue: '#5B9DFF',
+        magenta: '#C77DFF',
+        cyan: '#5BE7E7',
+        white: '#E8EBF1',
+        brightBlack: '#6B7280',
+        brightRed: '#FF8A8A',
+        brightGreen: '#5BFFC4',
+        brightYellow: '#FFB066',
+        brightBlue: '#8FB8FF',
+        brightMagenta: '#DAA6FF',
+        brightCyan: '#8FF0F0',
+        brightWhite: '#FFFFFF',
       },
       convertEol: true,
     })
@@ -96,7 +96,7 @@ export default function TerminalPanel({ cwd, onClose, welcomeMessage }: Props) {
 
   return (
     <div
-      style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#ffffff' }}
+      style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}
     >
       <div
         style={{
@@ -105,14 +105,14 @@ export default function TerminalPanel({ cwd, onClose, welcomeMessage }: Props) {
           justifyContent: 'space-between',
           padding: '0 12px',
           height: 28,
-          background: '#f7f7f8',
-          borderBottom: '1px solid #e8e8ec',
+          background: 'var(--bg-soft)',
+          borderBottom: '1px solid var(--line)',
           flexShrink: 0,
         }}
       >
         <span
           style={{
-            color: '#999',
+            color: 'var(--txt-sub)',
             fontSize: 11,
             textTransform: 'uppercase',
             letterSpacing: 0.6,
@@ -126,7 +126,7 @@ export default function TerminalPanel({ cwd, onClose, welcomeMessage }: Props) {
             <span
               onClick={onClose}
               style={{
-                color: '#bbb',
+                color: 'var(--txt-dim)',
                 fontSize: 13,
                 cursor: 'pointer',
                 lineHeight: 1,

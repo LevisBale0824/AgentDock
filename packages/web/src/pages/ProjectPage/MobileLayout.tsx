@@ -8,10 +8,10 @@ import SessionList from './components/SessionList'
 import type { useProjectPage } from './useProjectPage'
 
 const C = {
-  bg0: '#f7f7f8',
-  bg1: '#ffffff',
-  bg3: '#e8e8ec',
-  text0: '#1a1a1a',
+  bg0: 'var(--bg)',
+  bg1: 'var(--bg-soft)',
+  bg3: 'var(--line)',
+  text0: 'var(--txt)',
 }
 
 type PageState = ReturnType<typeof useProjectPage>
@@ -55,7 +55,7 @@ export default function MobileLayout(p: Props) {
             }}
           >
             <HomeOutlined
-              style={{ color: '#888', cursor: 'pointer', fontSize: 15 }}
+              style={{ color: 'var(--txt-sub)', cursor: 'pointer', fontSize: 15 }}
               onClick={() => navigate('/')}
             />
           </div>
