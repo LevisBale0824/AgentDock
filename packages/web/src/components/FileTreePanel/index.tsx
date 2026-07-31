@@ -6,12 +6,12 @@ import type { FileTreeNode } from '@/http/index'
 const { Text } = Typography
 
 const C = {
-  bg0: '#f7f7f8',
-  bg1: '#ffffff',
-  bg3: '#e8e8ec',
-  text1: '#888888',
-  text2: '#bbb',
-  text0: '#1a1a1a',
+  bg0: 'var(--bg)',
+  bg1: 'var(--bg-soft)',
+  bg3: 'var(--line)',
+  text1: 'var(--txt-sub)',
+  text2: 'var(--txt-dim)',
+  text0: 'var(--txt)',
 }
 
 function getFileEmoji(name: string): string {

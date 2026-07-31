@@ -64,7 +64,7 @@ let highlighterPromise: Promise<Highlighter> | null = null
 function getHighlighter(): Promise<Highlighter> {
   if (!highlighterPromise) {
     highlighterPromise = createHighlighter({
-      themes: ['vitesse-light'],
+      themes: ['vitesse-dark'],
       langs: Object.values(EXT_LANG).filter((v, i, a) => a.indexOf(v) === i),
     })
   }
@@ -91,7 +91,7 @@ export default function FileViewer({ projectID, filePath, content }: Props) {
           justifyContent: 'center',
           height: '100%',
           padding: 24,
-          background: '#ffffff',
+          background: 'var(--bg-soft)',
           gap: 12,
         }}
       >
@@ -106,7 +106,7 @@ export default function FileViewer({ projectID, filePath, content }: Props) {
             boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
           }}
         />
-        <span style={{ color: '#666', fontSize: 11 }}>{filePath}</span>
+        <span style={{ color: 'var(--txt-sub)', fontSize: 11 }}>{filePath}</span>
       </div>
     )
   }
@@ -120,14 +120,14 @@ export default function FileViewer({ projectID, filePath, content }: Props) {
           alignItems: 'center',
           justifyContent: 'center',
           height: '100%',
-          background: '#ffffff',
+          background: 'var(--bg-soft)',
           gap: 16,
         }}
       >
         <div style={{ fontSize: 48 }}>🎵</div>
-        <span style={{ color: '#ccc', fontSize: 13 }}>{filePath.split('/').pop()}</span>
+        <span style={{ color: 'var(--txt-dim)', fontSize: 13 }}>{filePath.split('/').pop()}</span>
         <audio controls src={rawUrl} style={{ width: 320 }} />
-        <span style={{ color: '#555', fontSize: 11 }}>{filePath}</span>
+        <span style={{ color: 'var(--txt-sub)', fontSize: 11 }}>{filePath}</span>
       </div>
     )
   }
@@ -147,7 +147,7 @@ function CodeViewer({ code, lang, filePath }: { code: string; lang?: string; fil
     getHighlighter()
       .then((hl) => {
         if (cancelled) return
-        setHtml(hl.codeToHtml(code, { lang, theme: 'vitesse-light' }))
+        setHtml(hl.codeToHtml(code, { lang, theme: 'vitesse-dark' }))
       })
       .catch(() => setHtml(null))
     return () => {
@@ -158,14 +158,14 @@ function CodeViewer({ code, lang, filePath }: { code: string; lang?: string; fil
   if (html) {
     return (
       <div
-        style={{ position: 'relative', height: '100%', overflow: 'auto', background: '#ffffff' }}
+        style={{ position: 'relative', height: '100%', overflow: 'auto', background: 'var(--bg-soft)' }}
       >
         <div
           style={{
             position: 'absolute',
             top: 8,
             right: 12,
-            color: '#aaa',
+            color: 'var(--txt-dim)',
             fontSize: 10,
             fontFamily: 'monospace',
             userSelect: 'none',
@@ -174,7 +174,7 @@ function CodeViewer({ code, lang, filePath }: { code: string; lang?: string; fil
         >
           {lang ?? ''} · {filePath.split('/').pop()}
         </div>
-        <style>{`.shiki { margin: 0 !important; padding: 12px 0 16px !important; background: #ffffff !important; font-family: "JetBrains Mono","Fira Code","Cascadia Code",monospace !important; font-size: 12.5px !important; line-height: 1 !important; } .shiki .line { display: block; padding: 0 16px; }`}</style>
+        <style>{`.shiki { margin: 0 !important; padding: 12px 0 16px !important; background: var(--bg-soft) !important; font-family: "JetBrains Mono","Fira Code","Cascadia Code",monospace !important; font-size: 12.5px !important; line-height: 1 !important; } .shiki .line { display: block; padding: 0 16px; }`}</style>
         <div dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     )
